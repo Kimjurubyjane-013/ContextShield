@@ -1,3 +1,14 @@
+# ContextShield
+
+[![Live Demo](https://img.shields.io/badge/Live-Demo-blue?style=for-the-badge)](https://contextshield-547bb.web.app)
+
+**Privacy-first Hybrid AI Security Assistant**
+
+Detect phishing threats. Protect personal information. Understand every decision.
+
+🌐 **Live Demo:** https://contextshield-547bb.web.app
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
