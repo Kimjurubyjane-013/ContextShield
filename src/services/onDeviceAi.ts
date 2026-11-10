@@ -44,10 +44,16 @@ export function hasOnDevicePromptApiSupport(): boolean {
   return Boolean(win.LanguageModel || (win.ai && win.ai.languageModel))
 }
 
+let cachedReadiness: OnDeviceModelReadiness | null = null
+
 /**
  * Checks on-device model availability.
  */
-export async function checkOnDeviceReadiness(): Promise<OnDeviceModelReadiness> {
+export async function checkOnDeviceReadiness(forceRefresh = false): Promise<OnDeviceModelReadiness> {
+  if (cachedReadiness && !forceRefresh) {
+    return cachedReadiness
+  }
+
   if (typeof window === 'undefined') {
     return {
       status: 'unsupported',
@@ -70,36 +76,45 @@ export async function checkOnDeviceReadiness(): Promise<OnDeviceModelReadiness> 
   try {
     let avail: 'readily' | 'after-download' | 'no' = 'no'
 
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Prompt API probe timed out')), 1500)
+    )
+
     if (typeof lm.availability === 'function') {
-      avail = await lm.availability()
+      avail = await Promise.race([lm.availability(), timeoutPromise])
     } else if (typeof lm.capabilities === 'function') {
-      const caps = await lm.capabilities()
+      const caps = await Promise.race([lm.capabilities(), timeoutPromise])
       avail = caps.available
     }
 
+    let result: OnDeviceModelReadiness
     if (avail === 'readily') {
-      return {
+      result = {
         status: 'readily',
         statusMessage: 'On-device Gemini Nano is downloaded and ready for instant private inference.',
       }
     } else if (avail === 'after-download') {
-      return {
+      result = {
         status: 'after-download',
         statusMessage:
           'On-device Gemini Nano model requires an initial one-time download to your device.',
       }
     } else {
-      return {
+      result = {
         status: 'no',
         statusMessage:
           'On-device AI is disabled or unsupported on this hardware configuration.',
       }
     }
+    cachedReadiness = result
+    return result
   } catch (err) {
-    return {
-      status: 'error',
-      statusMessage: `Failed to inspect device model readiness: ${(err as Error).message}`,
+    const result: OnDeviceModelReadiness = {
+      status: 'unsupported',
+      statusMessage: `Browser Prompt API (Gemini Nano) is unready or unresponsive (${(err as Error).message}).`,
     }
+    cachedReadiness = result
+    return result
   }
 }
 
