@@ -42,3 +42,38 @@ If you are developing a production application, we recommend enabling type-aware
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
 "# ContextShield" 
+
+
+## Phase 3.2 — Manual Browser & Network Verification
+
+**Verification Status: 5/5 Tests Passed**
+
+Manual browser verification was conducted using Google Chrome and Chrome DevTools Protocol (CDP) on the local Vite application.
+
+| Test | Result |
+|---|---|
+| Local Rules Network Isolation | PASS |
+| Gemini Nano Unavailable Handling | PASS |
+| Local Fallback on Cloud Quota Exhaustion | PASS |
+| Consent Snapshot Invalidation | PASS |
+| Actual Inference Source Attribution | PASS |
+
+### Key Verification Results
+
+- **Network Isolation:** Local rule-based analysis completed without Fetch/XHR requests.
+- **On-Device Safety:** Unsupported Gemini Nano inference correctly returned `ON_DEVICE_UNAVAILABLE`, without silent cloud fallback.
+- **Quota Handling:** A mocked HTTP 429 response correctly triggered daily quota handling without automatic retries.
+- **Privacy Consent:** Editing the message invalidated previous cloud consent.
+- **Attribution Integrity:** Gemini Nano, Gemini Cloud, and Local Rules maintained separate source identities.
+
+### Reliability Improvements
+
+Fixed an indefinite Prompt API readiness probe by introducing a 1,500ms timeout in `src/services/onDeviceAi.ts`.
+
+### Known Limitations
+
+- Local rules use deterministic lexical and regex-based detection, not semantic AI.
+- Domain reputation relies on offline static lists.
+- Real Gemini Nano inference still requires a compatible device and browser.
+- Cloud quota testing used a mocked HTTP 429 response.
+- These manual tests were conducted locally; production verification remains pending.
