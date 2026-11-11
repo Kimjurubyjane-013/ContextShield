@@ -8,134 +8,80 @@ Detect phishing threats. Protect personal information. Understand every decision
 
 🌐 **Live Demo:** https://contextshield-547bb.web.app
 
+---
 
-# React + TypeScript + Vite
+## Architecture & Privacy Guarantees
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+ContextShield enforces strict separation across three independent analysis engines and never silently upgrades local execution to cloud inference:
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
-"# ContextShield" 
-
-
-## Phase 3.2 — Manual Browser & Network Verification
-
-**Verification Status: 5/5 Tests Passed**
-
-Manual browser verification was conducted using Google Chrome and Chrome DevTools Protocol (CDP) on the local Vite application.
-
-| Test | Result |
-|---|---|
-| Local Rules Network Isolation | PASS |
-| Gemini Nano Unavailable Handling | PASS |
-| Local Fallback on Cloud Quota Exhaustion | PASS |
-| Consent Snapshot Invalidation | PASS |
-| Actual Inference Source Attribution | PASS |
-
-### Key Verification Results
-
-- **Network Isolation:** Local rule-based analysis completed without Fetch/XHR requests.
-- **On-Device Safety:** Unsupported Gemini Nano inference correctly returned `ON_DEVICE_UNAVAILABLE`, without silent cloud fallback.
-- **Quota Handling:** A mocked HTTP 429 response correctly triggered daily quota handling without automatic retries.
-- **Privacy Consent:** Editing the message invalidated previous cloud consent.
-- **Attribution Integrity:** Gemini Nano, Gemini Cloud, and Local Rules maintained separate source identities.
-
-### Reliability Improvements
-
-Fixed an indefinite Prompt API readiness probe by introducing a 1,500ms timeout in `src/services/onDeviceAi.ts`.
-
-### Known Limitations
-
-- Local rules use deterministic lexical and regex-based detection, not semantic AI.
-- Domain reputation relies on offline static lists.
-- Real Gemini Nano inference still requires a compatible device and browser.
-- Cloud quota testing used a mocked HTTP 429 response.
-- These manual tests were conducted locally; production verification remains pending.
+- **Client-Side PII Masking (`src/features/privacy/piiDetection.ts`)**: Detects and masks personal identifiers (emails, phones, SSNs, cards, IPs, credentials, etc.) in the browser before any cloud payload preview or `localStorage` scan-history persistence.
+- **Explicit Snapshot-Bound Cloud Consent (`src/features/analysis/CloudConsentModal.tsx`, `src/services/cloudAi.ts`)**: Gemini Cloud calls require active consent tied strictly to the exact protected message snapshot. Editing the message or revoking consent immediately invalidates consent and aborts any in-flight request.
+- **Strict Engine & Attribution Separation**:
+  - **Local Rule-Based Engine (`src/services/localSecurityEngine.ts`, attribution `local_rules`)**: Deterministic offline heuristics with `0` network calls; functions cleanly regardless of cloud consent, quota limits, or browser Prompt API support.
+  - **On-Device AI (`src/services/onDeviceAi.ts`, attribution `on_device`)**: Chrome Prompt API (`window.LanguageModel` / `window.ai.languageModel`) via `InferenceMode.ONLY_ON_DEVICE`. Unsupported browsers immediately surface `ON_DEVICE_UNAVAILABLE` with zero silent cloud fallback.
+  - **Cloud AI (`src/services/cloudAi.ts`, attribution `in_cloud`)**: `gemini-3.8-flash` via Firebase AI Logic using `InferenceMode.ONLY_IN_CLOUD` and `CLOUD_REQUEST_TIMEOUT_MS = 60000` (`60s`).
+- **Transparent Unified Reporting (`src/services/hybridReportEngine.ts`, `src/features/analysis/analysisUtils.ts`)**: Prevents deterministic `local_rules` from masquerading as `on_device` Gemini Nano AI or generating fabricated hybrid AI corroboration.
 
 ---
 
-## Phase 3.4 — Execution Reliability, Cancellation & Cloud Latency Improvements
+## Execution Reliability, Cancellation & Cloud Latency Improvements
 
-Phase 3.4 hardens execution across all three analysis engines (`src/services/onDeviceAi.ts`, `src/services/cloudAi.ts`, `src/services/errorUtils.ts`, `src/features/analysis/OnDeviceAnalysisCard.tsx`, and `src/features/analysis/CloudAnalysisCard.tsx`) to eliminate first-click blocks, multi-minute cloud hangs, and stale concurrency locks.
-
-### Implemented Engineering Improvements
+Execution reliability across all three analysis engines (`src/services/onDeviceAi.ts`, `src/services/cloudAi.ts`, `src/services/hybridAiService.ts`, `src/services/errorUtils.ts`, `src/features/analysis/OnDeviceAnalysisCard.tsx`, and `src/features/analysis/CloudAnalysisCard.tsx`) includes:
 
 1. **Synchronous Gemini Nano Availability Detection**
    - `getSynchronousReadiness()` in `src/services/onDeviceAi.ts` evaluates `hasOnDevicePromptApiSupport()` (`window.LanguageModel || window.ai?.languageModel`) synchronously (`0ms`) when `OnDeviceAnalysisCard` initializes.
-   - Unsupported browsers no longer wait on an asynchronous mount probe with disabled buttons; when a Prompt API object is present, `checkOnDeviceReadiness()` falls back to the 1,500ms timeout-guarded capability probe and caches the result.
+   - Unsupported browsers do not block on an asynchronous mount probe; when a Prompt API object is present, `checkOnDeviceReadiness()` falls back to the 1,500ms timeout-guarded capability probe and caches the result.
 
 2. **Explicit `ON_DEVICE_UNAVAILABLE` Handling**
    - On unsupported browsers (or when availability resolves to `'unsupported'` / `'no'`), `OnDeviceAnalysisCard` immediately sets `errorState.code = 'ON_DEVICE_UNAVAILABLE'` (`retryable: false`) and surfaces a **Run Local Rule-Based Analysis** action.
    - Unsupported on-device checks never silently fall back to Gemini Cloud and never label Local Rule-Based results as Gemini Nano (`on_device`).
 
-3. **Bounded Cloud Timeouts (12s Fast-Fail Retry Gate & 35s Request Cap) and `AbortController` Cancellation**
-   - In `src/services/cloudAi.ts`, `CLOUD_REQUEST_TIMEOUT_MS` is set to `35000` ms (35 seconds) for both `getGenerativeModel` initialization and each `model.generateContent(..., { timeout, signal })` call.
-   - Automatic retries in `runCloudAiAnalysis` are capped at `MAX_RETRIES = 1` and only trigger for transient errors when the failed attempt completed in under `12000` ms (12 seconds), total generation elapsed time is under `24000` ms (24 seconds), and the request was not aborted. Slow failures or 35-second timeouts fail fast without stacking back-to-back long waits.
-   - *(Code note: the unused/legacy `hybridAiService.ts` still sets `timeout: 35000` at model initialization while passing `timeout: 90000` on `generateContent`; primary UI cloud execution routes through `cloudAi.ts`.)*
-   - Each active cloud request attaches a fresh `AbortController` signal via `activeAbortController`, and `abortCloudAiAnalysis()` aborts the in-flight `fetch()` and clears `inFlightCloudRequests`.
+3. **Reconciled 60s Bounded Cloud Timeout, Retry Gating & `AbortController` Cancellation**
+   - `CLOUD_REQUEST_TIMEOUT_MS` is reconciled to `60000` ms (`60` seconds) in both `src/services/cloudAi.ts` and `src/services/hybridAiService.ts`, governing `getGenerativeModel`, `model.generateContent(..., { timeout, signal })`, `runWithAbortAndTimeout`, and `sleepWithAbort` so initialization and inference share the same bounded timeout budget.
+   - Automatic retries in `runCloudAiAnalysis` are capped at `MAX_RETRIES = 1` via `shouldAutoRetryCloudError()`, triggering only for fast, genuinely transient errors completed in under `12000` ms (`12` seconds) with total generation time under `24000` ms (`24` seconds), and explicitly blocking automatic retries on `DAILY_QUOTA_EXCEEDED`, `TOKEN_QUOTA_EXCEEDED`, `BILLING_REQUIRED`, `MODEL_OVERLOADED`, `TIMEOUT`, and `CANCELLED`.
+   - Each active cloud request attaches a fresh `AbortController` signal via `activeAbortController` and a unique request token in `inFlightCloudRequests` (`Map<string, symbol>`), and `abortCloudAiAnalysis()` aborts in-flight requests and releases concurrency locks.
 
 4. **Real-Time Cloud Analysis Timer**
-   - `CloudAnalysisCard` maintains an `elapsedSeconds` counter updated every second while `isAnalyzing` is `true`, rendering live elapsed timing in both the action button (`Analyzing in Cloud (<n>s)...`) and footer (`Inference in progress (<n>s) • Bounded 35s timeout`).
+   - `CloudAnalysisCard` maintains an `elapsedSeconds` counter updated every second while `isAnalyzing` is `true`, rendering live elapsed timing (`{elapsedSeconds}s / 60s`, `Analyzing ({elapsedSeconds}s)...`, and `{elapsedSeconds}s` progress with a `60s bounded timeout` indicator).
 
 5. **Cancel & Run Local Functionality**
-   - While cloud inference is running, `CloudAnalysisCard` displays a **Cancel & Run Local** button that calls `abortCloudAiAnalysis()`, clears the analyzing state, and invokes `runLocalRuleBasedAnalysis()` immediately to display deterministic local findings.
+   - While cloud inference is running, `CloudAnalysisCard` provides **Cancel & Run Local** (alongside **Cancel**), aborting the active cloud call via `abortCloudAiAnalysis()`, resetting the analyzing state, and triggering deterministic local rule-based analysis immediately.
 
-6. **Improved High-Demand Error Classification**
-   - `parseQuotaErrorDetails()` in `src/services/errorUtils.ts` classifies high-traffic messages (`overloaded`, `high demand`, `spikes in demand`, `experiencing high demand`, `service unavailable`, `deadline_expired` / `deadline expired`, and HTTP `503`/`504`) under `MODEL_OVERLOADED`.
-   - `toAnalysisErrorState()` maps `MODEL_OVERLOADED` to **"Cloud AI Model Overloaded"** (`retryable: true` for manual retry alongside immediate local rule-based fallback).
+6. **Root-Cause `[Code: 20]` Fix & Quota / High-Demand Classification**
+   - `extractStatusCode()` in `src/services/errorUtils.ts` ignores legacy `DOMException.code === 20` (`AbortError`) so client aborts and timeouts are never misclassified as HTTP status codes.
+   - `parseQuotaErrorDetails()` classifies quota exhaustion (`GenerateRequestsPerDayPerProjectPerModel` -> `DAILY_QUOTA_EXCEEDED`, rate limits -> `RATE_LIMIT_EXCEEDED`, token limits -> `TOKEN_QUOTA_EXCEEDED`) and high-demand errors (`overloaded`, `high demand`, `deadline_expired`, HTTP `503`/`504` -> `MODEL_OVERLOADED`), blocking automatic retry loops while allowing deterministic local analysis immediately.
 
-7. **Immediate Consent Revocation & Concurrency Lock Cleanup**
-   - Clicking **Revoke** in `CloudAnalysisCard` immediately calls `abortCloudAiAnalysis()`, resets `isAnalyzing` to `false`, and clears `cloudConsent` (`hasConsented: false`, `consentedAt: null`, `consentedMessageSnapshot: null`).
-   - `runCloudAiAnalysis` releases `activeAbortController` and deletes the message entry from `inFlightCloudRequests` in its `finally` block (and `CloudAnalysisCard` also aborts active requests on unmount), preventing stuck `RATE_LIMITED` ("Analysis in Progress") locks.
-
-8. **Independent Execution of All Three Analysis Engines**
-   - **On-Device AI (`onDeviceAi.ts`, source `on_device`)**: Uses Chrome Prompt API locally with zero network requests.
-   - **Local Rule-Based Engine (`localSecurityEngine.ts`, source `local_rules`)**: Runs deterministically in browser memory regardless of cloud consent, cloud failures/aborts, or Prompt API support.
-   - **Cloud AI (`cloudAi.ts`, source `in_cloud`, `gemini-3.8-flash`)**: Executes strictly via `InferenceMode.ONLY_IN_CLOUD` only when explicit per-snapshot consent is active.
+7. **Immediate Consent Revocation & Stale-Response Guards**
+   - Clicking **Revoke** / **Revoke Consent** or editing the message snapshot immediately calls `abortCloudAiAnalysis()` (with `CONSENT_REVOKED` / cancellation handling), resets `isAnalyzing`, clears consent state, and uses `activeRequestIdRef` in `CloudAnalysisCard` to discard any stale responses.
+   - `finally` blocks clean up `inFlightCloudRequests` tokens and `activeAbortController` references so subsequent scans never stall on stale concurrency locks.
 
 ---
 
-### Implemented vs. Independently Verified Scope
+## Cybersecurity Defense Center UI/UX & Real Telemetry
 
-- **Implemented in Codebase**: All 8 engineering capabilities above are implemented in the repository source files and verified by static build (`npm run build`) and automated unit/runtime audit suites (`npm test`: 8 test suites passing).
-- **Independently Verified in Live Production**: Live CDP browser verification against `https://contextshield-547bb.web.app` confirmed unsupported-device first-click handling, Local Rule-Based network isolation, live cloud request dispatch with real-time timer and `Cancel & Run Local` abort behavior, and immediate consent revocation cleanup.
-- **Not Tested in Production**:
-  - **Real Gemini Nano (`on_device`) inference was NOT tested**, as the test browser environment did not have Chrome Prompt API / Gemini Nano enabled (`ON_DEVICE_UNAVAILABLE` path was verified instead).
-  - Full waiting through the automatic 35-second timeout expiry without manual abort, and live HTTP 500/503 high-demand retries under real server spikes, were verified via code inspection and error-classification unit tests rather than induced against live Vertex AI in the CDP run.
+- **Dark-Mode-First Palette & Light Mode (`src/index.css`, `src/context/ThemeContext.tsx`)**: Deep navy (`#071827`), dark teal panels (`#0B2735`), teal controls (`#0D5663`), cyan accents (`#22D3EE`), and persistent Light Mode toggle (defaults to dark unless `cs_theme === 'light'`).
+- **Standardized Components & Badge Alignment (`src/components/common/StatusBadge.tsx`, `src/components/common/Button.tsx`, analysis/report/privacy/history views)**: Unified pill heights, `flex-wrap items-center gap-2` badge/action wrapping, button alignment, and `focus-visible` cyan rings.
+- **Zero Fabricated Telemetry (`src/context/SecurityContext.tsx`, `src/pages/DashboardPage.tsx`, `src/layouts/TopNav.tsx`)**: Removed seeded sample counts/ratios (`142`, `68%/18%/14%`, `Hackathon Solo`); Dashboard, TopNav notifications, and Scan History persist only real, masked scan records in `cs_scan_history_v1` (`0` default).
 
 ---
 
-### Phase 3.4 — Production Verification Summary (`https://contextshield-547bb.web.app`)
+## Verification Scope: Local vs. Production
 
-| Task | Verification Scenario | Observed Production Result | Evidence Artifact | Status |
-|---|---|---|---|---|
-| **Task A** | On-Device First Click & Attribution | Unsupported browser immediately rendered `ON_DEVICE_UNAVAILABLE`; first click executed Local Rule-Based Engine (`0ms` wait, zero false Gemini Nano attribution). | `scratch/phase34_taskA_ondevice_first_attempt.png` | **PASS** *(unsupported path; real Nano not tested)* |
-| **Task B** | Local Engine Independence & Network Isolation | Executed without cloud consent and after errors; deterministic findings produced with `0` Fetch/XHR requests. | `scratch/phase34_taskB_local_independence.png` | **PASS** |
-| **Task C** | Cloud Execution, Live Timer & `Cancel & Run Local` | Dispatched live POST request to Vertex AI, ticked real-time elapsed timer, and aborted in-flight fetch via **Cancel & Run Local** while triggering local analysis. | `scratch/phase34_taskC_cloud_in_flight.png`, `scratch/phase34_taskC_cloud_aborted.png` | **PASS** |
-| **Task D** | Consent Revocation & Concurrency Lock Release | Clicking **Revoke** aborted the active cloud call, reset analyzing state, cleared consent, and kept Local Rule-Based Analysis functional. | `scratch/phase34_taskD_consent_revoked.png` | **PASS** |
+### Local Verification (Current Working Tree)
+
+- **Unit & Runtime Verification (`npm test`)**: Passed — all 4 suites passed (`errorUtils.test.ts` [11 subtests covering `DOMException` code 20, `CANCELLED`, quota classification, and `shouldAutoRetryCloudError`], `hybridSynthesis.test.ts`, `quotaAndLocalEngine.test.ts`, and `runtimeVerification.test.ts`).
+- **Linter (`npm run lint`)**: Passed — `0` errors via `oxlint`.
+- **TypeScript & Production Bundle (`npm run build`)**: Passed (`tsc -b && vite build`).
+- **Headless Chrome CDP Verification (local `dist/` preview)**: Verified `1440px`, `1280px`, `768px`, and `375px` viewports (`0` horizontal overflow, `0` badge overlaps, `0` console/page errors), dark-mode default and light toggle, `0` initial scan telemetry, PII redaction in Step 2 and Consent Modal, `0` Fetch/XHR requests on Local Rule-Based Analysis, `ON_DEVICE_UNAVAILABLE` handling without silent cloud fallback, and masked `localStorage` scan-history updates.
+- **Historical Local Phase 3.2 Browser Checks (`5/5` Scenarios)**: Confirmed Local Rules network isolation, `ON_DEVICE_UNAVAILABLE` safety, mocked HTTP 429 daily-quota no-retry handling, consent snapshot invalidation on edit, and strict source attribution (`local_rules`, `on_device`, `in_cloud`).
+
+### Production Verification Status (`https://contextshield-547bb.web.app`)
+
+- **Current Working Tree Not Yet Deployed**: The latest Cloud Reliability fixes (`60s` unified timeout, `[Code: 20]` classification fix) and Cybersecurity Defense Center UI redesign have **not yet been deployed** to Firebase Hosting.
+- **Prior Deployed Builds**: Earlier CDP checks verified pre-redesign Phase 3.4 behavior against live hosting (unsupported `ON_DEVICE_UNAVAILABLE` first-click flow, Local Rules network isolation, live cloud request dispatch/cancellation via **Cancel & Run Local**, and immediate consent revocation), **without** testing real Chrome Gemini Nano hardware or waiting through automatic `60s` Cloud timeout expiry.
+
+### Known Limitations & Pending Live Verification
+
+- **Real Gemini Nano (`on_device`) Hardware Untested**: Test environments lacked compatible Chrome Prompt API / Gemini Nano hardware, so only the `ON_DEVICE_UNAVAILABLE` fallback path was verified locally and in prior hosting checks.
+- **Live Cloud Inference on Current Build Pending**: Live `gemini-3.8-flash` inference, automatic `60s` (`CLOUD_REQUEST_TIMEOUT_MS`) timeout handling, and live HTTP 429/503 responses have not yet been executed against the current working-tree build once deployed.
+- **Static Rules & Mocked Quota Tests**: Local rule-based detection relies on deterministic patterns and offline domain lists (not semantic AI), and prior HTTP 429 browser quota tests used controlled mocked responses rather than exhausting real project quotas.

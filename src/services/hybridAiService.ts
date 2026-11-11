@@ -37,15 +37,45 @@ import {
 import {
   createAnalysisError,
   isAnalysisErrorState,
-  isTransientError,
   normalizeAnalysisError,
+  shouldAutoRetryCloudError,
   toAnalysisErrorState,
 } from './errorUtils'
+import {
+  CLOUD_REQUEST_TIMEOUT_MS,
+  type CloudAbortReason,
+  runWithAbortAndTimeout,
+  sleepWithAbort,
+} from './cloudAi'
 import { getFirebaseAppInstance, getFirebaseConfigStatus } from './firebaseConfig'
 import { hasOnDevicePromptApiSupport } from './onDeviceAi'
 
-// Concurrency guard: track active hybrid analysis requests by message snapshot
-const inFlightHybridRequests = new Set<string>()
+// Concurrency guard: track active hybrid analysis requests by snapshot -> request token
+const inFlightHybridRequests = new Map<string, symbol>()
+
+// Active abort controller & cancellation reason for in-flight hybrid request
+let activeHybridAbortController: AbortController | null = null
+let activeHybridAbortReason: CloudAbortReason | null = null
+
+/**
+ * Aborts any currently active hybrid AI request and releases concurrency locks.
+ */
+export function abortHybridAiAnalysis(reason: CloudAbortReason = 'USER_CANCELLED'): void {
+  activeHybridAbortReason = reason
+  if (activeHybridAbortController) {
+    try {
+      const marker =
+        reason === 'CONSENT_REVOKED'
+          ? 'CLOUD_ABORT_CONSENT_REVOKED: Consent revoked during active hybrid analysis.'
+          : 'CLOUD_ABORT_USER_CANCELLED: Hybrid analysis cancelled by user.'
+      activeHybridAbortController.abort(new DOMException(marker, 'AbortError'))
+    } catch {
+      // Ignore secondary abort errors
+    }
+    activeHybridAbortController = null
+  }
+  inFlightHybridRequests.clear()
+}
 
 // Cached model singletons for hybrid service
 let cachedHybridAi: any = null
@@ -101,7 +131,9 @@ async function getCachedHybridModel(mode: HybridInferenceMode): Promise<any> {
     }
   }
 
-  const model = getGenerativeModel(cachedHybridAi, modelConfig, { timeout: 35000 })
+  const model = getGenerativeModel(cachedHybridAi, modelConfig, {
+    timeout: CLOUD_REQUEST_TIMEOUT_MS,
+  })
   cachedModels.set(mode, model)
   return model
 }
@@ -184,13 +216,21 @@ export async function runHybridAiAnalysis({
     )
   }
 
-  inFlightHybridRequests.add(trimmed)
+  const requestToken = Symbol('hybrid-analysis-request')
+  inFlightHybridRequests.set(trimmed, requestToken)
+  const controller = new AbortController()
+  activeHybridAbortController = controller
+  activeHybridAbortReason = null
 
   try {
     // 1. Measure Firebase Request Initialization latency
     const tInitStart = performance.now()
     const { InferenceSource } = await import('firebase/ai')
-    const model = await getCachedHybridModel(targetMode)
+    const model = await runWithAbortAndTimeout(
+      getCachedHybridModel(targetMode),
+      controller.signal,
+      CLOUD_REQUEST_TIMEOUT_MS
+    )
     const initMs = Math.round(performance.now() - tInitStart)
 
     // Attempt on-device initialization if supported
@@ -233,6 +273,23 @@ export async function runHybridAiAnalysis({
     const attemptTelemetry: AttemptTelemetry[] = []
 
     while (attempt <= MAX_RETRIES) {
+      if (controller.signal.aborted) {
+        if (activeHybridAbortReason === 'CONSENT_REVOKED') {
+          throw createAnalysisError(
+            'CONSENT_REQUIRED',
+            'Consent Revoked',
+            'Cloud consent was revoked. The active request was aborted.',
+            false
+          )
+        }
+        throw createAnalysisError(
+          'CANCELLED',
+          'Analysis Cancelled',
+          'The in-flight request was cancelled and all locks were released.',
+          false
+        )
+      }
+
       if (targetMode === 'PREFER_ON_DEVICE') {
         // Verify consent snapshot has not been revoked or changed during retries
         if (!consentState?.hasConsented) {
@@ -261,7 +318,14 @@ export async function runHybridAiAnalysis({
       let backoffDurationMs = 0
 
       try {
-        result = await model.generateContent(activePromptPayload, { timeout: 90000 })
+        result = await runWithAbortAndTimeout(
+          model.generateContent(activePromptPayload, {
+            timeout: CLOUD_REQUEST_TIMEOUT_MS,
+            signal: controller.signal,
+          }),
+          controller.signal,
+          CLOUD_REQUEST_TIMEOUT_MS
+        )
         const durationMs = Math.round(performance.now() - tGenStart)
         totalGenerationTime += durationMs
 
@@ -279,12 +343,28 @@ export async function runHybridAiAnalysis({
         totalGenerationTime += durationMs
         lastError = generateErr
 
+        if (controller.signal.aborted) {
+          throw createAnalysisError(
+            activeHybridAbortReason === 'CONSENT_REVOKED' ? 'CONSENT_REQUIRED' : 'CANCELLED',
+            activeHybridAbortReason === 'CONSENT_REVOKED'
+              ? 'Consent Revoked'
+              : 'Analysis Cancelled',
+            activeHybridAbortReason === 'CONSENT_REVOKED'
+              ? 'Cloud consent was revoked before completion.'
+              : 'The request was cancelled by the user.',
+            false
+          )
+        }
+
         const normalized = normalizeAnalysisError(generateErr)
         attemptHttpStatus = normalized.statusCode
         attemptErrorClassification = normalized.suggestedErrorCode
         attemptStatus = normalized.suggestedErrorCode === 'TIMEOUT' ? 'TIMEOUT' : 'ERROR'
 
-        if (attempt < MAX_RETRIES && isTransientError(generateErr)) {
+        if (
+          attempt < MAX_RETRIES &&
+          shouldAutoRetryCloudError(generateErr, durationMs, totalGenerationTime)
+        ) {
           attempt++
           retryAttempts++
 
@@ -310,11 +390,11 @@ export async function runHybridAiAnalysis({
           })
 
           console.warn(
-            `[HybridAI Telemetry] Attempt ${attemptNumber} encountered transient error (${attemptErrorClassification}${
+            `[HybridAI Telemetry] Attempt ${attemptNumber} encountered fast transient error (${attemptErrorClassification}${
               attemptHttpStatus ? `, HTTP ${attemptHttpStatus}` : ''
             }). Retrying attempt ${attempt + 1} in ${backoffDurationMs}ms... (duration: ${durationMs}ms)`
           )
-          await new Promise(resolve => setTimeout(resolve, backoffDurationMs))
+          await sleepWithAbort(backoffDurationMs, controller.signal)
           continue
         }
 
@@ -330,6 +410,17 @@ export async function runHybridAiAnalysis({
         })
         throw generateErr
       }
+    }
+
+    if (controller.signal.aborted) {
+      throw createAnalysisError(
+        activeHybridAbortReason === 'CONSENT_REVOKED' ? 'CONSENT_REQUIRED' : 'CANCELLED',
+        activeHybridAbortReason === 'CONSENT_REVOKED' ? 'Consent Revoked' : 'Analysis Cancelled',
+        activeHybridAbortReason === 'CONSENT_REVOKED'
+          ? 'Cloud consent was revoked before completion.'
+          : 'The request was cancelled by the user.',
+        false
+      )
     }
 
     if (!result) {
@@ -404,7 +495,13 @@ export async function runHybridAiAnalysis({
   } catch (err) {
     return handleAnalysisError(err, targetMode, trimmed, prompt, startTime)
   } finally {
-    inFlightHybridRequests.delete(trimmed)
+    if (activeHybridAbortController === controller) {
+      activeHybridAbortController = null
+      activeHybridAbortReason = null
+    }
+    if (inFlightHybridRequests.get(trimmed) === requestToken) {
+      inFlightHybridRequests.delete(trimmed)
+    }
   }
 }
 

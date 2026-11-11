@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { generateMaskedText } from './piiDetection'
 import type { DetectedPiiItem, DetectionSummary, PiiCategory } from './types'
 
@@ -142,30 +143,30 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
   }, [originalMessage, items, hasItems])
 
   const categoryBadgeColors: Record<PiiCategory, string> = {
-    Email: 'bg-[#159FB5]/15 text-[#117B8C] dark:text-[#35C6D9] border-[#159FB5]/30',
-    Phone: 'bg-[#2E8B57]/15 text-[#216740] dark:text-[#67D59A] border-[#2E8B57]/30',
-    'Financial Information': 'bg-[#D9383A]/15 text-[#B32426] dark:text-[#FFA4A6] border-[#D9383A]/30',
-    'Identification Number': 'bg-[#E07A5F]/15 text-[#B8573D] dark:text-[#F3A58E] border-[#E07A5F]/30',
-    'Sensitive URL Parameter': 'bg-[#164E5A]/15 text-[#164E5A] dark:text-[#A6C5C1] border-[#164E5A]/30',
+    Email: 'bg-[#22D3EE]/15 text-[#0891B2] dark:text-[#22D3EE] border-[#22D3EE]/35',
+    Phone: 'bg-[#22C55E]/15 text-[#15803D] dark:text-[#4ADE80] border-[#22C55E]/35',
+    'Financial Information': 'bg-[#EF4444]/15 text-[#DC2626] dark:text-[#FCA5A5] border-[#EF4444]/35',
+    'Identification Number': 'bg-[#F59E0B]/15 text-[#B45309] dark:text-[#FBBF24] border-[#F59E0B]/35',
+    'Sensitive URL Parameter': 'bg-[#0D5663]/20 text-[#0D5663] dark:text-[#38BDF8] border-[#0D9488]/35',
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* 1. Header Banner & Status Summary */}
-      <Card className="p-5 sm:p-7 border-2 border-[#159FB5]/30 dark:border-[#35C6D9]/40">
+      <Card className="p-5 sm:p-7 border-2 border-[#0D9488]/35 dark:border-[#22D3EE]/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border-card)]">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-xl bg-[#164E5A] text-[#35C6D9] shrink-0 mt-0.5">
+            <div className="p-2.5 rounded-xl bg-[#0D5663] text-[#22D3EE] shrink-0 mt-0.5">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-bold text-[var(--text-heading)]">
                   Step 2: Local Privacy Review &amp; Redaction
                 </h2>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#2E8B57]/15 text-[#2E8B57] dark:text-[#67D59A] border border-[#2E8B57]/30">
+                <StatusBadge variant="safe" size="sm" className="font-mono">
                   100% In-Browser
-                </span>
+                </StatusBadge>
               </div>
               <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
                 ContextShield scanned your message entirely in your browser memory. Review detected items and choose what to redact before proceeding.
@@ -196,7 +197,7 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
 
           <div className="p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
             <p className="text-[11px] text-[var(--text-muted)] font-medium">Selected to Redact</p>
-            <p className="text-xl sm:text-2xl font-black text-[#159FB5] dark:text-[#35C6D9] mt-0.5">
+            <p className="text-xl sm:text-2xl font-black text-[#0891B2] dark:text-[#22D3EE] mt-0.5">
               {selectedIds.size} / {totalCount}
             </p>
           </div>
@@ -210,8 +211,8 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
 
           <div className="p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
             <p className="text-[11px] text-[var(--text-muted)] font-medium">Processing Boundary</p>
-            <p className="text-xs sm:text-sm font-bold text-[#2E8B57] mt-1 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#2E8B57]" />
+            <p className="text-xs sm:text-sm font-bold text-[#16A34A] dark:text-[#22C55E] mt-1 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
               Zero Cloud Leakage
             </p>
           </div>
@@ -344,7 +345,7 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
                     <div
                       className={`w-5 h-5 rounded-md border mt-0.5 flex items-center justify-center shrink-0 transition-colors ${
                         isSelected
-                          ? 'bg-[#159FB5] border-[#159FB5] text-white'
+                          ? 'bg-[#0D9488] border-[#0D9488] dark:bg-[#22D3EE] dark:border-[#22D3EE] text-white dark:text-[#05121E]'
                           : 'border-[var(--border-card)] bg-[var(--bg-card)]'
                       }`}
                       aria-label={`Toggle masking for ${item.category}`}
@@ -360,9 +361,9 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
                           {item.category}
                         </span>
 
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#A6C5C1]/20 text-[var(--text-muted)] border border-[#A6C5C1]/30 font-medium">
+                        <StatusBadge variant="neutral" size="sm">
                           {item.certainty}
-                        </span>
+                        </StatusBadge>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
@@ -371,7 +372,7 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
                           {item.originalText}
                         </code>
                         <span className="text-[var(--text-muted)]">&rarr;</span>
-                        <code className="px-2 py-0.5 rounded bg-[#159FB5]/15 text-[var(--text-accent)] border border-[#159FB5]/30 font-bold">
+                        <code className="px-2 py-0.5 rounded bg-[#22D3EE]/15 text-[var(--text-accent)] border border-[#22D3EE]/35 font-bold">
                           {item.suggestedReplacement}
                         </code>
                       </div>
@@ -382,15 +383,13 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
                     </div>
                   </div>
 
-                  <span
-                    className={`text-xs font-bold px-3 py-1 rounded-full shrink-0 self-end sm:self-center ${
-                      isSelected
-                        ? 'bg-[#2E8B57]/15 text-[#2E8B57] dark:text-[#67D59A]'
-                        : 'bg-[#E07A5F]/15 text-[#B8573D] dark:text-[#F3A58E]'
-                    }`}
+                  <StatusBadge
+                    variant={isSelected ? 'safe' : 'warning'}
+                    size="sm"
+                    className="shrink-0 self-end sm:self-center"
                   >
                     {isSelected ? 'Masking Active' : 'Keep Unmasked'}
-                  </span>
+                  </StatusBadge>
                 </div>
               )
             })}
@@ -398,9 +397,9 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
         </Card>
       ) : (
         /* Reassuring zero-PII found banner */
-        <Card className="p-6 sm:p-7 border border-[#2E8B57]/30 bg-[#2E8B57]/5">
+        <Card className="p-6 sm:p-7 border border-[#22C55E]/30 bg-[#22C55E]/5">
           <div className="flex items-start gap-3.5">
-            <div className="p-2.5 rounded-xl bg-[#2E8B57]/15 text-[#2E8B57] shrink-0">
+            <div className="p-2.5 rounded-xl bg-[#22C55E]/15 text-[#22C55E] shrink-0">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div className="space-y-1">
@@ -422,7 +421,7 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
       <Card className="p-5 sm:p-7 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-card)]">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-[#2E8B57]/15 text-[#2E8B57]">
+            <div className="p-1.5 rounded-lg bg-[#22C55E]/15 text-[#22C55E]">
               <Lock className="w-4 h-4" />
             </div>
             <div>

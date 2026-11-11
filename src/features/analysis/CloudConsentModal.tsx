@@ -49,7 +49,7 @@ export const CloudConsentModal: React.FC<CloudConsentModalProps> = ({
         {/* Header */}
         <div className="p-6 pb-4 border-b border-[var(--border-card)] flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#159FB5]/15 text-[var(--text-accent)] shrink-0">
+            <div className="p-2.5 rounded-xl bg-[#22D3EE]/15 text-[var(--text-accent)] shrink-0">
               <Shield className="w-6 h-6" />
             </div>
             <div>
@@ -86,7 +86,7 @@ export const CloudConsentModal: React.FC<CloudConsentModalProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-[#2E8B57]" />
+                <Lock className="w-3.5 h-3.5 text-[#22C55E]" />
                 Exact Protected Text to be Transmitted:
               </span>
               <span className="text-[11px] text-[var(--text-muted)] font-mono">
@@ -106,25 +106,25 @@ export const CloudConsentModal: React.FC<CloudConsentModalProps> = ({
             </h4>
             <ul className="text-xs text-[var(--text-muted)] space-y-1.5">
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#2E8B57] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0 mt-0.5" />
                 <span>Only the redacted message shown above will be transmitted over TLS.</span>
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#2E8B57] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0 mt-0.5" />
                 <span>Original unmasked emails, phone numbers, cards, and IDs remain in local browser memory.</span>
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#2E8B57] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0 mt-0.5" />
                 <span>Uploaded screenshots or image files are never uploaded or transmitted.</span>
               </li>
             </ul>
           </div>
 
           {/* Warning banner */}
-          <div className="p-4 rounded-xl bg-[#E07A5F]/10 border border-[#E07A5F]/30 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-[#E07A5F] shrink-0 mt-0.5" />
+          <div className="p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-[#F59E0B] shrink-0 mt-0.5" />
             <div className="space-y-1 text-xs">
-              <p className="font-bold text-[#B8573D] dark:text-[#F3A58E]">
+              <p className="font-bold text-[#B45309] dark:text-[#FBBF24]">
                 Privacy Caution
               </p>
               <p className="text-[var(--text-muted)] leading-relaxed">

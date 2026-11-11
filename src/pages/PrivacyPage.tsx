@@ -13,6 +13,7 @@ import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Modal } from '@/components/common/Modal'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { useSecurity } from '@/context/SecurityContext'
 
 export const PrivacyPage: React.FC = () => {
@@ -63,10 +64,13 @@ export const PrivacyPage: React.FC = () => {
       {/* Privacy Hero Card */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-card)] shadow-[var(--shadow-card)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-colors duration-250">
         <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2E8B57]/15 text-[#2E8B57] dark:text-[#67D59A] text-xs font-semibold">
-            <Lock className="w-3.5 h-3.5" />
-            <span>Zero Cloud Leakage Verified</span>
-          </div>
+          <StatusBadge
+            variant="safe"
+            size="md"
+            icon={<Lock className="w-3.5 h-3.5" />}
+          >
+            Zero Cloud Leakage Verified
+          </StatusBadge>
           <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-heading)] tracking-tight">
             Zero-Knowledge Privacy Vault
           </h1>
@@ -117,7 +121,7 @@ export const PrivacyPage: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="p-2.5 rounded-xl bg-[#164E5A] text-[#35C6D9]">
+                    <div className="p-2.5 rounded-xl bg-[#0D5663] text-[#22D3EE]">
                       <Icon className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-bold">
@@ -132,7 +136,7 @@ export const PrivacyPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-[var(--border-card)] flex items-center gap-1.5 text-[11px] font-semibold text-[#2E8B57]">
+                <div className="pt-4 mt-4 border-t border-[var(--border-card)] flex items-center gap-1.5 text-[11px] font-semibold text-[#16A34A] dark:text-[#22C55E]">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Enforced On-Device</span>
                 </div>
@@ -147,7 +151,7 @@ export const PrivacyPage: React.FC = () => {
         {/* Redaction Rules */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 rounded-xl bg-[#159FB5]/15 text-[var(--text-accent)]">
+            <div className="p-2 rounded-xl bg-[#22D3EE]/15 text-[var(--text-accent)]">
               <EyeOff className="w-5 h-5" />
             </div>
             <div>
@@ -171,7 +175,7 @@ export const PrivacyPage: React.FC = () => {
                 key={i}
                 className="p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]"
               >
-                <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-heading)] mb-1">
+                <div className="flex items-center justify-between gap-2 text-xs font-semibold text-[var(--text-heading)] mb-1">
                   <span>{r.rule}</span>
                   <Badge status="safe" size="sm">Active</Badge>
                 </div>
@@ -187,7 +191,7 @@ export const PrivacyPage: React.FC = () => {
         <Card className="p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 rounded-xl bg-[#164E5A] text-[#35C6D9]">
+              <div className="p-2 rounded-xl bg-[#0D5663] text-[#22D3EE]">
                 <Database className="w-5 h-5" />
               </div>
               <div>
@@ -211,7 +215,7 @@ export const PrivacyPage: React.FC = () => {
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
                 <span className="text-[var(--text-muted)]">Remote Tracking / Analytics Cookies</span>
-                <span className="font-bold text-[#2E8B57]">0 (Disabled)</span>
+                <span className="font-bold text-[#16A34A] dark:text-[#22C55E]">0 (Disabled)</span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
                 <span className="text-[var(--text-muted)]">Storage Medium</span>
@@ -237,8 +241,8 @@ export const PrivacyPage: React.FC = () => {
           <p className="text-xs sm:text-sm text-[var(--text-main)] leading-relaxed">
             Are you sure you want to permanently delete all scan records and security history from your local browser vault?
           </p>
-          <div className="p-3 rounded-xl bg-[#E07A5F]/15 border border-[#E07A5F]/30 text-xs text-[#B8573D] dark:text-[#F3A58E]">
-            This action cannot be undone. All demo and user-scanned records will be erased.
+          <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#DC2626] dark:text-[#FCA5A5]">
+            This action cannot be undone. All user-scanned records will be erased.
           </div>
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button variant="outline" size="sm" onClick={() => setPurgeModalOpen(false)}>

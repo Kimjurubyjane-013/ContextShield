@@ -21,7 +21,13 @@ export interface ScanResult {
   reasons: string[]
   redactedPiiCount: number
   category: string
-  analysisMethod: 'On-Device Heuristic' | 'Simulated Hybrid Engine'
+  analysisMethod:
+    | 'Local Rule-Based Analysis'
+    | 'On-Device AI (Gemini Nano)'
+    | 'Cloud AI (Gemini 3.8 Flash)'
+    | 'On-Device Heuristic'
+    | 'Simulated Hybrid Engine'
+  actualInferenceSource?: 'local_rules' | 'on_device' | 'in_cloud'
   piiItems?: PiiItem[]
   isDemo?: boolean
 }

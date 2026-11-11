@@ -18,9 +18,9 @@ export const Card: React.FC<CardProps> = ({
     subtle:
       'bg-[var(--bg-card-subtle)] border border-[var(--border-card)] text-[var(--text-main)]',
     featured:
-      'bg-[var(--bg-card)] border-2 border-[#159FB5]/40 dark:border-[#35C6D9]/45 shadow-[0_8px_20px_rgba(21,159,181,0.1)] text-[var(--text-main)]',
+      'bg-[var(--bg-card)] border border-[#0D5663]/55 dark:border-[#22D3EE]/45 shadow-[0_8px_24px_rgba(13,86,99,0.18)] text-[var(--text-main)]',
     interactive:
-      'bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[#159FB5]/60 dark:hover:border-[#35C6D9]/60 hover:shadow-md hover:translate-y-[-1px] cursor-pointer text-[var(--text-main)]',
+      'bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[#0D5663]/70 dark:hover:border-[#22D3EE]/60 hover:shadow-[0_8px_22px_rgba(34,211,238,0.1)] hover:translate-y-[-1px] cursor-pointer text-[var(--text-main)]',
   }
 
   return (

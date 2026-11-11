@@ -84,9 +84,17 @@ export function extractStatusCode(err: unknown): number | undefined {
     }
   }
 
-  // If code is numeric (e.g. { code: 503 })
-  if (typeof record.code === 'number' && Number.isFinite(record.code)) {
-    return record.code
+  const nameStr = safeString(record.name)
+  const isDomException =
+    (typeof DOMException !== 'undefined' && err instanceof DOMException) ||
+    nameStr === 'AbortError' ||
+    nameStr === 'TimeoutError'
+
+  // If code is numeric HTTP status (100-599), ignore DOMException legacy codes (e.g., ABORT_ERR = 20)
+  if (!isDomException && typeof record.code === 'number' && Number.isFinite(record.code)) {
+    if (record.code >= 100 && record.code <= 599) {
+      return record.code
+    }
   }
 
   // Extract from message like "... [503 Service Unavailable] ..." or "... status: 503 ..."
@@ -343,8 +351,10 @@ export function parseQuotaErrorDetails(err: unknown): QuotaErrorDetails {
       retryDelaySeconds > 3600) ||
     fullText.includes('requests_per_day') ||
     fullText.includes('requests per day') ||
+    fullText.includes('requestsperday') ||
     fullText.includes('daily request limit') ||
-    fullText.includes('daily quota')
+    fullText.includes('daily quota') ||
+    violations.some(v => (v.quotaId || '').toLowerCase().includes('perday'))
   ) {
     category = 'DAILY_QUOTA_EXCEEDED'
   }
@@ -492,6 +502,18 @@ export function normalizeAnalysisError(err: unknown): NormalizedErrorDetails {
     suggestedErrorCode = 'EMPTY_PAYLOAD'
     isTransient = false
   } else if (
+    lowerCode === 'cancelled' ||
+    lowerCode === 'aborted' ||
+    lowerMsg.includes('cloud_abort_user_cancelled') ||
+    lowerMsg.includes('cloud_abort_consent_revoked') ||
+    lowerMsg.includes('cancelled by user') ||
+    lowerMsg.includes('canceled by user') ||
+    lowerMsg.includes('request cancelled') ||
+    lowerMsg.includes('request canceled')
+  ) {
+    suggestedErrorCode = 'CANCELLED'
+    isTransient = false
+  } else if (
     lowerCode === 'on_device_unavailable' ||
     lowerMsg.includes('on-device gemini nano is not available') ||
     lowerMsg.includes('chrome prompt api')
@@ -535,12 +557,17 @@ export function normalizeAnalysisError(err: unknown): NormalizedErrorDetails {
     suggestedErrorCode = 'AUTH_ERROR'
     isTransient = false
   }
-  // Other transient network/deadline conditions
+  // Firebase AI Logic SDK timeouts (DOMException [AbortError]: Timeout has expired.) and deadline timeouts
   else if (
     statusCode === 503 ||
+    (err instanceof Error && err.name === 'TimeoutError') ||
+    lowerMsg.includes('timeout has expired') ||
+    lowerMsg.includes('timeout expired') ||
+    lowerMsg.includes('timed out') ||
     lowerMsg.includes('503') ||
     lowerMsg.includes('deadline') ||
-    lowerCode.includes('deadline')
+    lowerCode.includes('deadline') ||
+    lowerCode === 'timeout'
   ) {
     suggestedErrorCode = 'TIMEOUT'
     isTransient = true
@@ -567,11 +594,7 @@ export function normalizeAnalysisError(err: unknown): NormalizedErrorDetails {
     suggestedErrorCode = 'INVALID_RESPONSE'
     isTransient = true
   } else if (!isPermanent) {
-    isTransient =
-      statusCode === 500 ||
-      lowerCode.includes('unavailable') ||
-      lowerCode.includes('abort') ||
-      lowerMsg.includes('abort')
+    isTransient = statusCode === 500 || lowerCode.includes('unavailable')
   }
 
   return {
@@ -592,6 +615,44 @@ export function normalizeAnalysisError(err: unknown): NormalizedErrorDetails {
 export function isTransientError(err: unknown): boolean {
   if (!err) return false
   return normalizeAnalysisError(err).isTransient
+}
+
+/**
+ * Strict automated retry gate for Cloud AI calls:
+ * - Never auto-retries quota/billing/auth/consent/cancellation errors.
+ * - Never auto-retries TIMEOUT or MODEL_OVERLOADED (avoids pounding overloaded endpoints or stacking long timeouts).
+ * - Only auto-retries fast failures (< 12s attempt duration, < 24s total generation time) on genuinely transient errors.
+ */
+export function shouldAutoRetryCloudError(
+  err: unknown,
+  attemptDurationMs: number,
+  totalGenerationMs: number
+): boolean {
+  if (!err || attemptDurationMs >= 12000 || totalGenerationMs >= 24000) {
+    return false
+  }
+  const normalized = normalizeAnalysisError(err)
+  if (!normalized.isTransient) {
+    return false
+  }
+  switch (normalized.suggestedErrorCode) {
+    case 'NETWORK_ERROR':
+    case 'SERVICE_UNAVAILABLE':
+    case 'INVALID_RESPONSE':
+      return true
+    case 'RATE_LIMIT_EXCEEDED': {
+      const delay = normalized.quotaDetails?.retryDelaySeconds
+      return delay === undefined || delay <= 10
+    }
+    case 'MODEL_OVERLOADED':
+    case 'TIMEOUT':
+    case 'CANCELLED':
+    case 'DAILY_QUOTA_EXCEEDED':
+    case 'TOKEN_QUOTA_EXCEEDED':
+    case 'BILLING_REQUIRED':
+    default:
+      return false
+  }
 }
 
 /**
@@ -636,7 +697,7 @@ export function toAnalysisErrorState(
     case 'MODEL_OVERLOADED':
       title = 'Cloud AI Model Overloaded'
       message =
-        'Gemini Cloud servers are experiencing high traffic (HTTP 503). You can retry after a short delay or run Local Rule-Based Analysis.'
+        'Gemini Cloud servers are experiencing high demand. Automatic retries were skipped to avoid worsening load. You can retry manually or run Local Security Analysis immediately.'
       retryable = true
       break
     case 'BILLING_REQUIRED':
@@ -646,15 +707,21 @@ export function toAnalysisErrorState(
       retryable = false
       break
     case 'TIMEOUT':
-      title = 'Service Temporarily Overloaded'
+      title = 'Cloud Request Timed Out'
       message =
-        'Gemini Cloud experienced a transient deadline timeout (HTTP 503). The model is temporarily busy. Please try again or use Local Rule-Based Analysis.'
+        'Gemini Cloud did not finish responding within the 60-second request window. You can retry the cloud request or run Local Security Analysis immediately with zero network wait.'
       retryable = true
+      break
+    case 'CANCELLED':
+      title = 'Cloud Analysis Cancelled'
+      message =
+        'The in-flight cloud request was cancelled and all request locks were released. Your protected message remains local.'
+      retryable = false
       break
     case 'SERVICE_UNAVAILABLE':
       title = 'Service Unavailable'
       message =
-        'The Cloud AI service is temporarily unavailable. Please retry in a few moments or use Local Rule-Based Analysis.'
+        'The Cloud AI service is temporarily unavailable. Please retry in a few moments or use Local Security Analysis.'
       retryable = true
       break
     case 'RATE_LIMITED':

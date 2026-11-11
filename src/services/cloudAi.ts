@@ -18,26 +18,36 @@ import {
 } from './aiPromptUtils.ts'
 import {
   createAnalysisError,
-  isTransientError,
+  shouldAutoRetryCloudError,
   normalizeAnalysisError,
   toAnalysisErrorState,
 } from './errorUtils.ts'
 import { getFirebaseAppInstance, getFirebaseConfigStatus } from './firebaseConfig.ts'
 
-// Concurrency guard: track currently in-flight requests to prevent duplicate parallel executions
-const inFlightCloudRequests = new Set<string>()
+export type CloudAbortReason = 'USER_CANCELLED' | 'CONSENT_REVOKED'
 
-// Active abort controller for in-flight cloud request
+// Concurrency guard: track currently in-flight requests by payload -> request token
+const inFlightCloudRequests = new Map<string, symbol>()
+
+// Active abort controller & cancellation reason for in-flight cloud request
 let activeAbortController: AbortController | null = null
+let activeAbortReason: CloudAbortReason | null = null
 
 /**
  * Aborts any currently active cloud analysis request and releases concurrency locks.
  */
-export function abortCloudAiAnalysis(): void {
+export function abortCloudAiAnalysis(reason: CloudAbortReason = 'USER_CANCELLED'): void {
+  activeAbortReason = reason
   if (activeAbortController) {
     try {
-      activeAbortController.abort()
-    } catch {}
+      const marker =
+        reason === 'CONSENT_REVOKED'
+          ? 'CLOUD_ABORT_CONSENT_REVOKED: Consent revoked during active cloud analysis.'
+          : 'CLOUD_ABORT_USER_CANCELLED: Cloud analysis cancelled by user.'
+      activeAbortController.abort(new DOMException(marker, 'AbortError'))
+    } catch {
+      // Ignore secondary abort errors
+    }
     activeAbortController = null
   }
   inFlightCloudRequests.clear()
@@ -47,9 +57,78 @@ export function abortCloudAiAnalysis(): void {
 let cachedCloudModel: any = null
 let cachedFirebaseApp: any = null
 
-// SDK single-request timeout in milliseconds (35 seconds).
-// Bounds cloud inference to prevent hanging for minutes while allowing reasonable time for response.
-const CLOUD_REQUEST_TIMEOUT_MS = 35000
+// Unified SDK & client safety timeout in milliseconds (60 seconds).
+// Reconciled across cloudAi.ts and hybridAiService.ts: allows slow Gemini 3.8 Flash responses
+// while guaranteeing requests cannot hang for 180s+ (SDK default).
+export const CLOUD_REQUEST_TIMEOUT_MS = 60000
+
+/**
+ * Races an async SDK operation against an external AbortSignal and a hard safety timeout.
+ * Ensures that pre-fetch steps (e.g., SDK/header initialization) also obey cancellation & timeout.
+ */
+export function runWithAbortAndTimeout<T>(
+  operation: Promise<T>,
+  signal: AbortSignal,
+  timeoutMs: number
+): Promise<T> {
+  if (signal.aborted) {
+    return Promise.reject(
+      signal.reason ?? new DOMException('CLOUD_ABORT_USER_CANCELLED', 'AbortError')
+    )
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cleanup()
+      reject(new DOMException('Timeout has expired.', 'TimeoutError'))
+    }, timeoutMs)
+
+    const onAbort = () => {
+      cleanup()
+      reject(signal.reason ?? new DOMException('CLOUD_ABORT_USER_CANCELLED', 'AbortError'))
+    }
+
+    const cleanup = () => {
+      clearTimeout(timer)
+      signal.removeEventListener('abort', onAbort)
+    }
+
+    signal.addEventListener('abort', onAbort, { once: true })
+
+    operation.then(
+      val => {
+        cleanup()
+        resolve(val)
+      },
+      err => {
+        cleanup()
+        reject(err)
+      }
+    )
+  })
+}
+
+/**
+ * Abort-aware backoff delay so user cancellation during retry wait resolves immediately.
+ */
+export function sleepWithAbort(ms: number, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) {
+    return Promise.reject(
+      signal.reason ?? new DOMException('CLOUD_ABORT_USER_CANCELLED', 'AbortError')
+    )
+  }
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    const onAbort = () => {
+      clearTimeout(timer)
+      reject(signal.reason ?? new DOMException('CLOUD_ABORT_USER_CANCELLED', 'AbortError'))
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+}
 
 /**
  * Returns a cached, compiled GenerativeModel singleton instance for ONLY_IN_CLOUD Gemini 3.8 Flash inference.
@@ -134,7 +213,7 @@ export async function runCloudAiAnalysis(
     throw createAnalysisError(
       'RATE_LIMITED',
       'Analysis in Progress',
-      'An analysis for this exact message is already in flight. Please wait for it to complete.',
+      'An analysis for this exact message is already in flight. Please wait for it to complete or cancel it first.',
       false
     )
   }
@@ -151,19 +230,26 @@ export async function runCloudAiAnalysis(
     )
   }
 
-  inFlightCloudRequests.add(trimmed)
+  const requestToken = Symbol('cloud-analysis-request')
+  inFlightCloudRequests.set(trimmed, requestToken)
   const startTime = performance.now()
   const userContent = buildUserAnalysisContent(trimmed)
-  let controller: AbortController | null = null
+  const controller = new AbortController()
+  activeAbortController = controller
+  activeAbortReason = null
 
   try {
     // 1. Measure Firebase Request Initialization latency (near 0ms when cached)
     const tInitStart = performance.now()
-    const model = await getCachedCloudModel()
+    const model = await runWithAbortAndTimeout(
+      getCachedCloudModel(),
+      controller.signal,
+      CLOUD_REQUEST_TIMEOUT_MS
+    )
     const initMs = Math.round(performance.now() - tInitStart)
 
     // 2. Measure Gemini Response Generation latency (with strict bounded retry policy)
-    // MAX_RETRIES = 1: Bounded to maximum 1 retry on verified transient errors.
+    // MAX_RETRIES = 1: Bounded to maximum 1 retry on fast, genuinely transient errors only.
     const MAX_RETRIES = 1
     let attempt = 0
     let retryAttempts = 0
@@ -172,12 +258,25 @@ export async function runCloudAiAnalysis(
     let result: any = null
     const attemptTelemetry: AttemptTelemetry[] = []
 
-    controller = new AbortController()
-    activeAbortController = controller
-
     while (attempt <= MAX_RETRIES) {
-      // Re-verify consent and snapshot integrity before each attempt
-      if (!consentState.hasConsented || controller.signal.aborted) {
+      if (controller.signal.aborted) {
+        if (activeAbortReason === 'CONSENT_REVOKED') {
+          throw createAnalysisError(
+            'CONSENT_REQUIRED',
+            'Consent Revoked',
+            'Cloud consent was revoked. The active cloud request has been aborted.',
+            false
+          )
+        }
+        throw createAnalysisError(
+          'CANCELLED',
+          'Cloud Analysis Cancelled',
+          'The in-flight cloud request was cancelled and all locks were released.',
+          false
+        )
+      }
+
+      if (!consentState.hasConsented) {
         throw createAnalysisError(
           'CONSENT_REQUIRED',
           'Consent Required',
@@ -202,10 +301,14 @@ export async function runCloudAiAnalysis(
       let backoffDurationMs = 0
 
       try {
-        result = await model.generateContent(userContent, {
-          timeout: CLOUD_REQUEST_TIMEOUT_MS,
-          signal: controller.signal,
-        })
+        result = await runWithAbortAndTimeout(
+          model.generateContent(userContent, {
+            timeout: CLOUD_REQUEST_TIMEOUT_MS,
+            signal: controller.signal,
+          }),
+          controller.signal,
+          CLOUD_REQUEST_TIMEOUT_MS
+        )
         const durationMs = Math.round(performance.now() - tGenStart)
         totalGenerationTime += durationMs
 
@@ -223,19 +326,31 @@ export async function runCloudAiAnalysis(
         totalGenerationTime += durationMs
         lastError = err
 
+        if (controller.signal.aborted) {
+          if (activeAbortReason === 'CONSENT_REVOKED') {
+            throw createAnalysisError(
+              'CONSENT_REQUIRED',
+              'Consent Revoked',
+              'Cloud consent was revoked and the active request was aborted.',
+              false
+            )
+          }
+          throw createAnalysisError(
+            'CANCELLED',
+            'Cloud Analysis Cancelled',
+            'The in-flight cloud request was cancelled and all locks were released.',
+            false
+          )
+        }
+
         const normalized = normalizeAnalysisError(err)
         attemptHttpStatus = normalized.statusCode
         attemptErrorClassification = normalized.suggestedErrorCode
         attemptStatus = normalized.suggestedErrorCode === 'TIMEOUT' ? 'TIMEOUT' : 'ERROR'
 
-        // Check if transient error and bounded retries are available.
-        // Fast-fail: only retry if the first attempt was short (< 12s) and not aborted.
-        // If the attempt timed out (spent 35s), do NOT retry automatically.
         const shouldRetry =
           attempt < MAX_RETRIES &&
-          isTransientError(err) &&
-          durationMs < 12000 &&
-          totalGenerationTime < 24000 &&
+          shouldAutoRetryCloudError(err, durationMs, totalGenerationTime) &&
           !controller.signal.aborted
 
         if (shouldRetry) {
@@ -243,7 +358,7 @@ export async function runCloudAiAnalysis(
           retryAttempts++
 
           const serverDelaySec = normalized.quotaDetails?.retryDelaySeconds
-          if (serverDelaySec !== undefined && serverDelaySec > 0 && serverDelaySec <= 15) {
+          if (serverDelaySec !== undefined && serverDelaySec > 0 && serverDelaySec <= 10) {
             backoffDurationMs = Math.round(serverDelaySec * 1000)
           } else {
             const baseDelay = 1200 * attempt
@@ -268,7 +383,7 @@ export async function runCloudAiAnalysis(
               attemptHttpStatus ? `, HTTP ${attemptHttpStatus}` : ''
             }). Retrying attempt ${attempt + 1} in ${backoffDurationMs}ms... (duration: ${durationMs}ms)`
           )
-          await new Promise(resolve => setTimeout(resolve, backoffDurationMs))
+          await sleepWithAbort(backoffDurationMs, controller.signal)
           continue
         }
 
@@ -284,6 +399,17 @@ export async function runCloudAiAnalysis(
         })
         break
       }
+    }
+
+    if (controller.signal.aborted) {
+      throw createAnalysisError(
+        activeAbortReason === 'CONSENT_REVOKED' ? 'CONSENT_REQUIRED' : 'CANCELLED',
+        activeAbortReason === 'CONSENT_REVOKED' ? 'Consent Revoked' : 'Cloud Analysis Cancelled',
+        activeAbortReason === 'CONSENT_REVOKED'
+          ? 'Cloud consent was revoked before completion.'
+          : 'The cloud request was cancelled by user.',
+        false
+      )
     }
 
     if (!result) {
@@ -335,7 +461,10 @@ export async function runCloudAiAnalysis(
   } finally {
     if (activeAbortController === controller) {
       activeAbortController = null
+      activeAbortReason = null
     }
-    inFlightCloudRequests.delete(trimmed)
+    if (inFlightCloudRequests.get(trimmed) === requestToken) {
+      inFlightCloudRequests.delete(trimmed)
+    }
   }
 }

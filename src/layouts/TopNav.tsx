@@ -1,34 +1,27 @@
-import React, { useState } from 'react'
-import {
-  Bell,
-  Menu,
-  Search,
-  X,
-} from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { Bell, Menu, Search, ShieldCheck, X } from 'lucide-react'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { useNavigation } from '@/context/NavigationContext'
+import { useSecurity } from '@/context/SecurityContext'
 
 export const TopNav: React.FC = () => {
   const { searchQuery, setSearchQuery, setMobileMenuOpen, setCurrentPage } = useNavigation()
+  const { scans, stats } = useSecurity()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
 
-  const sampleNotifications = [
-    {
-      id: 1,
-      title: 'Local Privacy Shield active',
-      desc: 'All 4 heuristic patterns verified on-device.',
-      time: 'Just now',
-      unread: true,
-    },
-    {
-      id: 2,
-      title: 'Sample threat scan blocked',
-      desc: 'Credential harvesting SMS quarantined.',
-      time: '15m ago',
-      unread: true,
-    },
-  ]
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setNotificationsOpen(false)
+        setProfileOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const recentThreatScans = scans.filter(s => s.status !== 'safe').slice(0, 3)
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,13 +31,13 @@ export const TopNav: React.FC = () => {
   }
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-[var(--bg-header)] backdrop-blur-md border-b border-[var(--border-card)] px-4 sm:px-6 flex items-center justify-between transition-colors duration-250">
+    <header className="sticky top-0 z-30 h-16 bg-[var(--bg-header)] backdrop-blur-md border-b border-[var(--border-card)] px-4 sm:px-6 flex items-center justify-between transition-colors duration-200">
       {/* Left: Mobile hamburger & search */}
       <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-lg">
-        {/* Mobile menu trigger */}
         <button
+          type="button"
           onClick={() => setMobileMenuOpen(true)}
-          className="lg:hidden p-2 rounded-xl text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+          className="lg:hidden p-2 rounded-xl text-[var(--text-main)] hover:bg-[#0D5663]/15 dark:hover:bg-[#0D5663]/35 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60"
           aria-label="Open sidebar menu"
         >
           <Menu className="w-5 h-5" />
@@ -52,19 +45,24 @@ export const TopNav: React.FC = () => {
 
         {/* Search Bar */}
         <form onSubmit={handleSearchSubmit} className="relative w-full">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <Search
+            className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+            aria-hidden="true"
+          />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search messages, threats, or history..."
-            className="w-full pl-9 pr-8 py-2 rounded-xl text-xs sm:text-sm bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-main)] placeholder-[var(--text-muted)]/70 focus:outline-none focus:ring-2 focus:ring-[#159FB5]/40 focus:border-[#159FB5] transition-all"
+            placeholder="Search messages, indicators, or scan history..."
+            aria-label="Search scan history"
+            className="w-full min-h-[38px] pl-9 pr-8 py-2 rounded-xl text-xs sm:text-sm bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-main)] placeholder-[var(--text-muted)]/75 focus:outline-none focus:ring-2 focus:ring-[#22D3EE]/45 focus:border-[#22D3EE] transition-all"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+              aria-label="Clear search query"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -72,96 +70,142 @@ export const TopNav: React.FC = () => {
         </form>
       </div>
 
-      {/* Right: Theme Switcher, Notifications, Profile */}
+      {/* Right: Theme Switcher, Security Alerts, Session Badge */}
       <div className="flex items-center gap-2 sm:gap-3 pl-3">
-        {/* Compact Theme Switcher */}
         <ThemeToggle compact />
 
         {/* Notification Bell with Dropdown */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => {
-              setNotificationsOpen(!notificationsOpen)
+              setNotificationsOpen(prev => !prev)
               setProfileOpen(false)
             }}
-            className="relative p-2 rounded-xl text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-            aria-label="Notifications"
+            aria-expanded={notificationsOpen}
+            aria-haspopup="menu"
+            className="relative min-h-[36px] min-w-[36px] flex items-center justify-center p-2 rounded-xl text-[var(--text-main)] hover:bg-[#0D5663]/15 dark:hover:bg-[#0D5663]/35 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60"
+            aria-label="Security Alerts"
           >
             <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#E07A5F] ring-2 ring-[var(--bg-main)]" />
+            {recentThreatScans.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4444] ring-2 ring-[var(--bg-main)]" />
+            )}
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-card)] shadow-xl p-3 z-50">
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 w-72 sm:w-80 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-card)] shadow-2xl p-3 z-50"
+            >
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--border-card)] px-2">
                 <span className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider">
-                  Security Alerts
+                  Security Telemetry
                 </span>
-                <span className="text-[10px] text-[var(--text-accent)] font-semibold">2 new</span>
+                <span className="text-[10px] text-[var(--text-accent)] font-semibold">
+                  {recentThreatScans.length > 0
+                    ? `${recentThreatScans.length} flagged`
+                    : `${stats.totalScans} scans`}
+                </span>
               </div>
               <div className="space-y-1.5">
-                {sampleNotifications.map(n => (
-                  <div
-                    key={n.id}
-                    className="p-2.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] text-left"
+                <div className="p-2.5 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-card)] text-left">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-heading)] mb-0.5">
+                    <span className="flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#22C55E]" />
+                      Local PII Redaction Active
+                    </span>
+                    <span className="text-[10px] text-[#22C55E] font-semibold">On-Device</span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Sensitive identifiers are masked in memory prior to inference.
+                  </p>
+                </div>
+
+                {recentThreatScans.map(scan => (
+                  <button
+                    key={scan.id}
+                    type="button"
+                    onClick={() => {
+                      setNotificationsOpen(false)
+                      setCurrentPage('history')
+                    }}
+                    className="w-full p-2.5 rounded-xl bg-[var(--bg-main)] hover:border-[#22D3EE]/40 border border-[var(--border-card)] text-left transition-colors cursor-pointer"
                   >
                     <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-heading)] mb-0.5">
-                      <span>{n.title}</span>
-                      <span className="text-[10px] text-[var(--text-muted)]">{n.time}</span>
+                      <span className="truncate pr-2">
+                        {scan.status === 'threat' ? 'High Risk Scan' : 'Suspicious Scan'} ·{' '}
+                        {scan.threatScore}/100
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)] shrink-0">
+                        {scan.timestamp}
+                      </span>
                     </div>
-                    <p className="text-[11px] text-[var(--text-muted)]">{n.desc}</p>
-                  </div>
+                    <p className="text-[11px] text-[var(--text-muted)] line-clamp-1">
+                      {scan.summary}
+                    </p>
+                  </button>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* User Profile Menu */}
+        {/* Session & Privacy Vault Menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => {
-              setProfileOpen(!profileOpen)
+              setProfileOpen(prev => !prev)
               setNotificationsOpen(false)
             }}
-            className="flex items-center gap-2 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] hover:border-[#159FB5]/50 transition-all cursor-pointer"
+            aria-expanded={profileOpen}
+            aria-haspopup="menu"
+            className="min-h-[36px] flex items-center gap-2 p-1.5 sm:px-2.5 sm:py-1 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] hover:border-[#22D3EE]/50 transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60"
           >
-            <div className="w-7 h-7 rounded-lg bg-[#164E5A] text-[#35C6D9] flex items-center justify-center font-bold text-xs">
+            <div className="w-7 h-7 rounded-lg bg-[#0D5663] text-[#22D3EE] flex items-center justify-center font-bold text-xs border border-[#22D3EE]/30">
               CS
             </div>
             <div className="hidden md:block text-left pr-1">
               <p className="text-xs font-bold text-[var(--text-heading)] leading-none">
-                Hackathon Solo
+                Local Vault
               </p>
-              <p className="text-[10px] text-[#2E8B57] font-medium leading-none mt-1 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2E8B57]" />
-                Security Guard
+              <p className="text-[10px] text-[#22C55E] font-medium leading-none mt-1 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                Shield Ready
               </p>
             </div>
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-card)] shadow-xl p-3 z-50">
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 w-56 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-card)] shadow-2xl p-3 z-50"
+            >
               <div className="p-2 border-b border-[var(--border-card)] mb-2">
-                <p className="text-xs font-bold text-[var(--text-heading)]">Solo Engineer</p>
-                <p className="text-[11px] text-[var(--text-muted)]">contextshield-solo@local.dev</p>
+                <p className="text-xs font-bold text-[var(--text-heading)]">Browser Defense Vault</p>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Client-side only · Consent required for cloud
+                </p>
               </div>
               <div className="space-y-1">
                 <button
+                  type="button"
                   onClick={() => {
                     setCurrentPage('settings')
                     setProfileOpen(false)
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--text-main)] hover:bg-[#159FB5]/10 transition-colors cursor-pointer"
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--text-main)] hover:bg-[#0D5663]/15 dark:hover:bg-[#0D5663]/35 transition-colors cursor-pointer"
                 >
-                  Preferences & Thresholds
+                  Preferences &amp; Thresholds
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setCurrentPage('privacy')
                     setProfileOpen(false)
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--text-main)] hover:bg-[#159FB5]/10 transition-colors cursor-pointer"
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--text-main)] hover:bg-[#0D5663]/15 dark:hover:bg-[#0D5663]/35 transition-colors cursor-pointer"
                 >
                   Privacy Vault Status
                 </button>

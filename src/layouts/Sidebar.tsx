@@ -37,29 +37,30 @@ export const Sidebar: React.FC<{ onCloseMobile?: () => void }> = ({ onCloseMobil
   }
 
   return (
-    <aside className="w-64 h-full bg-[var(--bg-sidebar)] border-r border-white/10 text-white flex flex-col justify-between shrink-0 select-none overflow-y-auto transition-colors duration-250">
+    <aside className="w-64 h-full bg-[var(--bg-sidebar)] border-r border-[#134857]/80 text-[#EAF4F8] flex flex-col justify-between shrink-0 select-none overflow-y-auto transition-colors duration-200">
       {/* Top Branding & Main Nav */}
       <div className="p-5">
         {/* Brand Logo & Title */}
-        <div
+        <button
+          type="button"
           onClick={() => handleNavClick('dashboard')}
-          className="flex items-center gap-3 px-2 py-2 mb-6 cursor-pointer group"
+          className="w-full text-left flex items-center gap-3 px-2 py-2 mb-6 rounded-xl cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60"
         >
-          <div className="relative p-2 rounded-xl bg-white/10 border border-[#35C6D9]/40 text-[#35C6D9] shadow-sm transition-transform group-hover:scale-105">
-            <Shield className="w-6 h-6 fill-[#159FB5]/30" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#35C6D9] animate-pulse" />
+          <div className="relative p-2.5 rounded-xl bg-[#0B2735] border border-[#22D3EE]/40 text-[#22D3EE] shadow-[0_0_18px_rgba(34,211,238,0.14)] transition-transform group-hover:scale-105">
+            <Shield className="w-6 h-6 fill-[#0D5663]/50" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#22C55E] ring-2 ring-[#05121E]" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-lg tracking-tight text-white">
-                Context<span className="text-[#35C6D9]">Shield</span>
+              <span className="font-extrabold text-lg tracking-tight text-[#EAF4F8]">
+                Context<span className="text-[#22D3EE]">Shield</span>
               </span>
             </div>
-            <p className="text-[10px] text-[#A6C5C1] font-medium leading-tight tracking-wider uppercase">
-              Hybrid AI Security
+            <p className="text-[10px] text-[#8EB2C2] font-semibold leading-tight tracking-wider uppercase">
+              Defense Center
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Navigation Section */}
         <nav className="space-y-1.5" aria-label="Main Navigation">
@@ -68,23 +69,25 @@ export const Sidebar: React.FC<{ onCloseMobile?: () => void }> = ({ onCloseMobil
             return (
               <button
                 key={id}
+                type="button"
                 onClick={() => handleNavClick(id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer ${
+                aria-current={isActive ? 'page' : undefined}
+                className={`w-full min-h-[42px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60 ${
                   isActive
-                    ? 'bg-[#159FB5] text-white shadow-sm font-semibold'
-                    : 'text-[#A6C5C1] hover:text-white hover:bg-white/10'
+                    ? 'bg-[#0D5663] text-[#EAF4F8] border border-[#22D3EE]/45 shadow-[0_4px_14px_rgba(13,86,99,0.45)] font-semibold'
+                    : 'text-[#8EB2C2] hover:text-[#EAF4F8] hover:bg-[#0B2735] border border-transparent'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <Icon
                     className={`w-4 h-4 transition-colors ${
-                      isActive ? 'text-white' : 'text-[#A6C5C1] group-hover:text-white'
+                      isActive ? 'text-[#22D3EE]' : 'text-[#8EB2C2] group-hover:text-[#EAF4F8]'
                     }`}
                   />
                   <span>{label}</span>
                 </div>
                 {isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-white shadow-xs" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]" />
                 )}
               </button>
             )
@@ -92,16 +95,17 @@ export const Sidebar: React.FC<{ onCloseMobile?: () => void }> = ({ onCloseMobil
 
           {/* DEV-Only Hybrid AI Test Bench Shortcut */}
           {import.meta.env.DEV && (
-            <div className="pt-3 mt-3 border-t border-white/10">
-              <span className="text-[10px] font-bold text-[#A6C5C1]/70 uppercase tracking-wider block px-2 mb-1.5">
+            <div className="pt-3 mt-3 border-t border-[#134857]/70">
+              <span className="text-[10px] font-bold text-[#8EB2C2]/70 uppercase tracking-wider block px-2 mb-1.5">
                 Developer Bench
               </span>
               <button
+                type="button"
                 onClick={() => handleNavClick('hybrid-test')}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`w-full min-h-[38px] flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60 ${
                   currentPage === 'hybrid-test'
-                    ? 'bg-[#35C6D9] text-[#164E5A] font-bold shadow-sm'
-                    : 'text-[#35C6D9] hover:bg-white/10 border border-[#35C6D9]/30'
+                    ? 'bg-[#22D3EE] text-[#071827] font-bold shadow-sm'
+                    : 'text-[#22D3EE] hover:bg-[#0B2735] border border-[#22D3EE]/30'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -119,41 +123,42 @@ export const Sidebar: React.FC<{ onCloseMobile?: () => void }> = ({ onCloseMobil
 
       {/* Bottom Section: Privacy Card, Theme Control */}
       <div className="p-5 space-y-4">
-        {/* Privacy Promotional Card */}
-        <div
+        {/* Privacy Protection Status Card */}
+        <button
+          type="button"
           onClick={() => handleNavClick('privacy')}
-          className="p-3.5 rounded-2xl bg-white/8 border border-[#A6C5C1]/30 hover:border-[#35C6D9]/50 transition-colors cursor-pointer group"
+          className="w-full text-left p-3.5 rounded-2xl bg-[#0B2735] border border-[#134857] hover:border-[#22D3EE]/50 transition-colors cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60"
         >
-          <div className="flex items-center gap-2 mb-2 text-[#35C6D9]">
-            <ShieldCheck className="w-4 h-4" />
-            <span className="text-[11px] font-bold tracking-wider uppercase text-white">
-              On-Device Privacy First
+          <div className="flex items-center gap-2 mb-2 text-[#22D3EE]">
+            <ShieldCheck className="w-4 h-4 shrink-0" />
+            <span className="text-[11px] font-bold tracking-wider uppercase text-[#EAF4F8]">
+              Zero-Leakage Privacy
             </span>
           </div>
-          <p className="text-[11px] text-[#A6C5C1] leading-relaxed mb-2.5">
-            All sensitive PII is redacted locally on your device before any AI analysis occurs.
+          <p className="text-[11px] text-[#8EB2C2] leading-relaxed mb-2.5">
+            PII is masked locally in browser memory before any external AI inspection.
           </p>
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-[#35C6D9] group-hover:underline">
-            <Sparkles className="w-3 h-3" />
-            <span>Zero Cloud Leakage</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-[#22D3EE] group-hover:underline">
+            <Sparkles className="w-3 h-3 shrink-0" />
+            <span>Inspect Privacy Rules</span>
           </div>
-        </div>
+        </button>
 
         {/* Theme Toggle */}
         <div className="space-y-1.5">
-          <label className="text-[10px] font-bold text-[#A6C5C1] uppercase tracking-wider pl-1">
-            Theme
-          </label>
+          <span className="text-[10px] font-bold text-[#8EB2C2] uppercase tracking-wider pl-1 block">
+            Display Mode
+          </span>
           <ThemeToggle />
         </div>
 
-        {/* Small Bottom Status */}
-        <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#A6C5C1]">
+        {/* Honest Local Protection Status */}
+        <div className="pt-2.5 border-t border-[#134857]/70 flex items-center justify-between text-[11px] text-[#8EB2C2]">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#2E8B57]" />
-            On-Device Engine
+            <span className="w-2 h-2 rounded-full bg-[#22C55E]" aria-hidden="true" />
+            Local Shield Active
           </span>
-          <span className="text-[10px] opacity-75">v0.1.0</span>
+          <span className="text-[10px] font-mono opacity-80">Zero Net</span>
         </div>
       </div>
     </aside>

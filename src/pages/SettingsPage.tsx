@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { useTheme } from '@/context/ThemeContext'
 import type { UserSettings } from '@/types'
 
@@ -43,15 +44,18 @@ export const SettingsPage: React.FC = () => {
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-card)] shadow-[var(--shadow-card)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors duration-250">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#159FB5]/10 text-[var(--text-accent)] text-xs font-semibold mb-2">
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Preferences</span>
-          </div>
+        <div className="space-y-2">
+          <StatusBadge
+            variant="info"
+            size="md"
+            icon={<Sliders className="w-3.5 h-3.5" />}
+          >
+            Preferences
+          </StatusBadge>
           <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-heading)] tracking-tight">
             System Settings &amp; Preferences
           </h1>
-          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">
             Configure your privacy threshold, visual appearance, and AI processing modes.
           </p>
         </div>
@@ -64,7 +68,7 @@ export const SettingsPage: React.FC = () => {
       {/* 1. Appearance & Theme */}
       <Card className="p-6 sm:p-7 space-y-4">
         <div className="flex items-center gap-3 pb-3 border-b border-[var(--border-card)]">
-          <div className="p-2 rounded-xl bg-[#164E5A] text-[#35C6D9]">
+          <div className="p-2 rounded-xl bg-[#0D5663] text-[#22D3EE]">
             <Palette className="w-5 h-5" />
           </div>
           <div>
@@ -72,7 +76,7 @@ export const SettingsPage: React.FC = () => {
               Appearance &amp; Display
             </h2>
             <p className="text-xs text-[var(--text-muted)]">
-              Select theme styling preserving brand color identity
+              Select Cybersecurity Defense Center display mode
             </p>
           </div>
         </div>
@@ -83,20 +87,20 @@ export const SettingsPage: React.FC = () => {
             onClick={() => setTheme('light')}
             className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
               theme === 'light'
-                ? 'bg-[#F8F5EE] border-[#159FB5] ring-2 ring-[#159FB5]/25 text-[#164E5A]'
-                : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)] hover:border-[#159FB5]/50'
+                ? 'bg-[#F4F8FB] border-[#0D9488] ring-2 ring-[#0D9488]/25 text-[#0F172A]'
+                : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)] hover:border-[#0D9488]/50'
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[#D7C4A8]/40 text-[#164E5A]">
+              <div className="p-2 rounded-lg bg-[#E2ECF4] text-[#0D5663]">
                 <Sun className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-[var(--text-heading)]">Warm Ivory (Light)</p>
-                <p className="text-[11px] text-[var(--text-muted)]">Clean, organic natural contrast</p>
+                <p className="text-xs font-bold text-[var(--text-heading)]">Clean Defense (Light)</p>
+                <p className="text-[11px] text-[var(--text-muted)]">High-clarity daylight contrast</p>
               </div>
             </div>
-            {theme === 'light' && <CheckCircle2 className="w-4 h-4 text-[#159FB5]" />}
+            {theme === 'light' && <CheckCircle2 className="w-4 h-4 text-[#0D9488]" />}
           </button>
 
           <button
@@ -104,20 +108,20 @@ export const SettingsPage: React.FC = () => {
             onClick={() => setTheme('dark')}
             className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
               theme === 'dark'
-                ? 'bg-[#0D2026] border-[#35C6D9] ring-2 ring-[#35C6D9]/25 text-[#EAF3F4]'
-                : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)] hover:border-[#35C6D9]/50'
+                ? 'bg-[#0B2735] border-[#22D3EE] ring-2 ring-[#22D3EE]/25 text-[#EAF4F8]'
+                : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)] hover:border-[#22D3EE]/50'
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[#143039] text-[#35C6D9]">
+              <div className="p-2 rounded-lg bg-[#05121E] text-[#22D3EE]">
                 <Moon className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-[var(--text-heading)]">Deep Teal Night (Dark)</p>
-                <p className="text-[11px] text-[var(--text-muted)]">No harsh neon or pitch black</p>
+                <p className="text-xs font-bold text-[var(--text-heading)]">SOC Command (Dark)</p>
+                <p className="text-[11px] text-[var(--text-muted)]">Primary Cybersecurity navy/cyan</p>
               </div>
             </div>
-            {theme === 'dark' && <CheckCircle2 className="w-4 h-4 text-[#35C6D9]" />}
+            {theme === 'dark' && <CheckCircle2 className="w-4 h-4 text-[#22D3EE]" />}
           </button>
         </div>
       </Card>
@@ -125,7 +129,7 @@ export const SettingsPage: React.FC = () => {
       {/* 2. Security & Privacy Toggles */}
       <Card className="p-6 sm:p-7 space-y-4">
         <div className="flex items-center gap-3 pb-3 border-b border-[var(--border-card)]">
-          <div className="p-2 rounded-xl bg-[#2E8B57]/15 text-[#2E8B57]">
+          <div className="p-2 rounded-xl bg-[#22C55E]/15 text-[#22C55E]">
             <Shield className="w-5 h-5" />
           </div>
           <div>
@@ -140,7 +144,7 @@ export const SettingsPage: React.FC = () => {
 
         <div className="space-y-4 pt-1">
           {/* On-device only */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
+          <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
             <div className="max-w-md">
               <p className="text-xs font-bold text-[var(--text-heading)]">
                 Strict On-Device Mode Only
@@ -151,9 +155,12 @@ export const SettingsPage: React.FC = () => {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={settings.onDeviceOnly}
+              aria-label="Strict On-Device Mode Only"
               onClick={() => handleToggle('onDeviceOnly')}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                settings.onDeviceOnly ? 'bg-[#2E8B57]' : 'bg-gray-300 dark:bg-gray-700'
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE] ${
+                settings.onDeviceOnly ? 'bg-[#22C55E]' : 'bg-slate-400 dark:bg-slate-700'
               }`}
             >
               <span
@@ -165,7 +172,7 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           {/* Auto PII Redaction */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
+          <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
             <div className="max-w-md">
               <p className="text-xs font-bold text-[var(--text-heading)]">
                 Automatic PII Masking
@@ -176,9 +183,12 @@ export const SettingsPage: React.FC = () => {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={settings.autoRedactPII}
+              aria-label="Automatic PII Masking"
               onClick={() => handleToggle('autoRedactPII')}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                settings.autoRedactPII ? 'bg-[#159FB5]' : 'bg-gray-300 dark:bg-gray-700'
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE] ${
+                settings.autoRedactPII ? 'bg-[#0D9488] dark:bg-[#22D3EE]' : 'bg-slate-400 dark:bg-slate-700'
               }`}
             >
               <span
@@ -190,7 +200,7 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           {/* Cloud Fallback */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
+          <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
             <div className="max-w-md">
               <p className="text-xs font-bold text-[var(--text-heading)]">
                 Hybrid Cloud Deep-Scan
@@ -201,9 +211,12 @@ export const SettingsPage: React.FC = () => {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={settings.cloudFallback}
+              aria-label="Hybrid Cloud Deep-Scan"
               onClick={() => handleToggle('cloudFallback')}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                settings.cloudFallback ? 'bg-[#159FB5]' : 'bg-gray-300 dark:bg-gray-700'
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE] ${
+                settings.cloudFallback ? 'bg-[#0D9488] dark:bg-[#22D3EE]' : 'bg-slate-400 dark:bg-slate-700'
               }`}
             >
               <span

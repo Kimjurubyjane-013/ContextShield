@@ -8,6 +8,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { Card } from '@/components/common/Card'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { compareAnalyses } from './analysisUtils'
 import type { AnalysisRecord } from './types'
 
@@ -29,31 +30,31 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
   const isLocalRules = onDeviceAnalysis?.actualInferenceSource === 'local_rules'
 
   return (
-    <Card className="p-6 sm:p-8 border-2 border-[#159FB5]/40 bg-[var(--bg-card)]">
+    <Card className="p-5 sm:p-6 border border-[#22D3EE]/35 bg-[var(--bg-card)]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border-card)]">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-[#159FB5]/15 text-[var(--text-accent)] shrink-0">
+        <div className="flex items-start gap-3">
+          <div className="p-2.5 rounded-xl bg-[#0D5663]/15 dark:bg-[#0D5663]/45 text-[#0D5663] dark:text-[#22D3EE] border border-[#22D3EE]/25 shrink-0">
             <Layers className="w-6 h-6" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg sm:text-xl font-bold text-[var(--text-heading)]">
                 Hybrid Intelligence Synthesis
               </h2>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#159FB5]/20 text-[var(--text-accent)]">
+              <StatusBadge variant="ai" size="sm">
                 {isBothCompleted
                   ? isLocalRules
                     ? 'Cloud AI + Local Rules'
-                    : 'Dual AI Model Consensus'
+                    : 'Dual AI Consensus'
                   : isCloudOnly
                   ? 'Cloud-Only Evaluation'
                   : isLocalRules
-                  ? 'Local Rule-Based Evaluation'
-                  : 'On-Device AI Evaluation'}
-              </span>
+                  ? 'Local Rule-Based'
+                  : 'On-Device AI'}
+              </StatusBadge>
             </div>
-            <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
+            <p className="text-xs sm:text-sm text-[var(--text-muted)]">
               {isBothCompleted
                 ? isLocalRules
                   ? 'Cross-paradigm reconciliation of deterministic rules and Gemini Cloud semantic AI'
@@ -64,38 +65,38 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
         </div>
 
         {/* Alignment status */}
-        <div
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${
+        <StatusBadge
+          variant={
             comparison.riskAlignment === 'AGREE'
-              ? 'bg-[#2E8B57]/15 border-[#2E8B57]/30 text-[#2E8B57] dark:text-[#67D59A]'
+              ? 'safe'
               : comparison.riskAlignment === 'DIVERGE'
-              ? 'bg-[#E07A5F]/15 border-[#E07A5F]/30 text-[#E07A5F]'
-              : 'bg-[#A6C5C1]/20 border-[var(--border-card)] text-[var(--text-muted)]'
-          }`}
+              ? 'warning'
+              : 'neutral'
+          }
+          icon={
+            comparison.riskAlignment === 'AGREE' ? (
+              <ShieldCheck className="w-3.5 h-3.5" />
+            ) : comparison.riskAlignment === 'DIVERGE' ? (
+              <ShieldAlert className="w-3.5 h-3.5" />
+            ) : (
+              <GitCompare className="w-3.5 h-3.5" />
+            )
+          }
         >
-          {comparison.riskAlignment === 'AGREE' ? (
-            <ShieldCheck className="w-4 h-4" />
-          ) : comparison.riskAlignment === 'DIVERGE' ? (
-            <ShieldAlert className="w-4 h-4" />
-          ) : (
-            <GitCompare className="w-4 h-4" />
-          )}
-          <span>
-            {comparison.riskAlignment === 'AGREE'
-              ? isLocalRules
-                ? 'Heuristic & AI Agreement'
-                : 'Consensus Reached'
-              : comparison.riskAlignment === 'DIVERGE'
-              ? isLocalRules
-                ? 'Engine Divergence'
-                : 'Model Divergence'
-              : isCloudOnly
-              ? 'Cloud-Only Evaluation'
-              : isLocalRules
-              ? 'Local Rule-Based Evaluation'
-              : 'On-Device AI Evaluation'}
-          </span>
-        </div>
+          {comparison.riskAlignment === 'AGREE'
+            ? isLocalRules
+              ? 'Heuristic & AI Agreement'
+              : 'Consensus Reached'
+            : comparison.riskAlignment === 'DIVERGE'
+            ? isLocalRules
+              ? 'Engine Divergence'
+              : 'Model Divergence'
+            : isCloudOnly
+            ? 'Cloud-Only Evaluation'
+            : isLocalRules
+            ? 'Local Rule-Based Evaluation'
+            : 'On-Device AI Evaluation'}
+        </StatusBadge>
       </div>
 
       {/* Alignment Narrative */}
@@ -147,28 +148,26 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
               {comparison.uniqueCloudFindings.map((item, idx) => (
                 <li
                   key={`cloud-${idx}`}
-                  className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)] flex items-start gap-1.5"
+                  className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)] flex items-start gap-2"
                 >
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#159FB5]/15 text-[var(--text-accent)] shrink-0 mt-0.5">
+                  <StatusBadge variant="ai" size="sm" className="shrink-0 mt-0.5">
                     Cloud
-                  </span>
+                  </StatusBadge>
                   <span>{item}</span>
                 </li>
               ))}
               {comparison.uniqueOnDeviceFindings.map((item, idx) => (
                 <li
                   key={`od-${idx}`}
-                  className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)] flex items-start gap-1.5"
+                  className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)] flex items-start gap-2"
                 >
-                  <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${
-                      isLocalRules
-                        ? 'bg-[#E07A5F]/15 text-[#B8573D] dark:text-[#F3A58E]'
-                        : 'bg-[#2E8B57]/15 text-[#2E8B57] dark:text-[#67D59A]'
-                    }`}
+                  <StatusBadge
+                    variant={isLocalRules ? 'local' : 'safe'}
+                    size="sm"
+                    className="shrink-0 mt-0.5"
                   >
                     {isLocalRules ? 'Local Rules' : 'Gemini Nano'}
-                  </span>
+                  </StatusBadge>
                   <span>{item}</span>
                 </li>
               ))}
@@ -204,8 +203,8 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
           {/* Active Engine Findings Panel */}
           <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-2">
             <h4 className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#159FB5]" />
-              {cloudAnalysis ? 'Cloud AI Findings' : 'On-Device AI Findings'} (
+              <Sparkles className="w-4 h-4 text-[#22D3EE]" />
+              {cloudAnalysis ? 'Cloud AI Findings' : isLocalRules ? 'Local Rule Findings' : 'On-Device AI Findings'} (
               {cloudAnalysis
                 ? comparison.uniqueCloudFindings.length
                 : comparison.uniqueOnDeviceFindings.length}
@@ -214,7 +213,7 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
             <p className="text-[11px] text-[var(--text-muted)]">
               {cloudAnalysis
                 ? 'Deep contextual threat patterns identified by Gemini Cloud:'
-                : 'Local heuristic patterns identified on-device:'}
+                : 'Deterministic local patterns identified on-device:'}
             </p>
             <ul className="space-y-1.5 pt-1">
               {(cloudAnalysis
@@ -223,11 +222,15 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
               ).map((item, idx) => (
                 <li
                   key={idx}
-                  className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)] flex items-start gap-1.5"
+                  className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)] flex items-start gap-2"
                 >
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#159FB5]/15 text-[var(--text-accent)] shrink-0 mt-0.5">
-                    {cloudAnalysis ? 'Cloud-Only' : 'On-Device'}
-                  </span>
+                  <StatusBadge
+                    variant={cloudAnalysis ? 'ai' : isLocalRules ? 'local' : 'safe'}
+                    size="sm"
+                    className="shrink-0 mt-0.5"
+                  >
+                    {cloudAnalysis ? 'Cloud-Only' : isLocalRules ? 'Local Rules' : 'On-Device'}
+                  </StatusBadge>
                   <span>{item}</span>
                 </li>
               ))}
@@ -246,9 +249,9 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
             {comparison.combinedRecommendations.map((rec, idx) => (
               <div
                 key={idx}
-                className="p-3 rounded-xl bg-[#2E8B57]/10 border border-[#2E8B57]/20 flex items-start gap-2.5 text-xs text-[var(--text-heading)] font-semibold"
+                className="p-3 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/25 flex items-start gap-2.5 text-xs text-[var(--text-heading)] font-semibold"
               >
-                <CheckCircle2 className="w-4 h-4 text-[#2E8B57] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0 mt-0.5" />
                 <span>{rec}</span>
               </div>
             ))}

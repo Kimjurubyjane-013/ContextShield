@@ -16,14 +16,18 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { useNavigation } from '@/context/NavigationContext'
+import { useSecurity } from '@/context/SecurityContext'
 import { PRESET_ATTACKS } from '@/data/mockSecurityData'
+import type { ScanResult } from '@/types'
 import { formatFileSize, validateImageFile, validateMessageInput } from './scannerUtils'
 import { MAX_MESSAGE_LENGTH, type UploadedScreenshot } from './types'
 import { detectPii, generateMaskedText, type DetectionSummary } from '@/features/privacy'
 
 export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const { setCurrentPage } = useNavigation()
+  const { analyzeMessage } = useSecurity()
   const [inputText, setInputText] = useState('')
   const [screenshot, setScreenshot] = useState<UploadedScreenshot | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -32,6 +36,7 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
   const [scanSubmitted, setScanSubmitted] = useState(false)
   const [summary, setSummary] = useState<DetectionSummary | null>(null)
   const [maskedPreview, setMaskedPreview] = useState('')
+  const [quickScanResult, setQuickScanResult] = useState<ScanResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -137,13 +142,14 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
     setIsSubmitting(true)
     setScanSubmitted(false)
 
-    // Run local client-side PII detection
+    // Run local client-side PII detection + local rule-based analysis (zero network)
     const result = detectPii(inputText)
     setSummary(result)
     const allIds = new Set(result.items.map(i => i.id))
     setMaskedPreview(generateMaskedText(inputText, result.items, allIds))
 
-    await new Promise(resolve => setTimeout(resolve, 350))
+    const scanRecord = await analyzeMessage(inputText, 'Dashboard Quick Scan')
+    setQuickScanResult(scanRecord)
 
     setIsSubmitting(false)
     setScanSubmitted(true)
@@ -152,33 +158,37 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
   const isScanDisabled = inputText.trim().length === 0 || isSubmitting
 
   return (
-    <Card className="p-5 sm:p-7">
+    <Card className="p-5 sm:p-6">
       {/* Widget Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-[var(--border-card)]">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-[#159FB5]/15 text-[var(--text-accent)]">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="p-2 rounded-xl bg-[#0D5663]/15 dark:bg-[#0D5663]/45 text-[#0D5663] dark:text-[#22D3EE] border border-[#22D3EE]/25">
               <MessageSquare className="w-5 h-5" />
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-[var(--text-heading)]">
-              Message Security Scanner
+              Quick Security Scanner
             </h2>
+            <StatusBadge variant="local" size="sm" dot>
+              Zero Network
+            </StatusBadge>
           </div>
           <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
-            Check suspicious messages before you trust them.
+            Inspect suspicious messages locally—sensitive PII is masked automatically before screening.
           </p>
         </div>
 
         {/* Full Scanner Page Link */}
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => setCurrentPage('scanner')}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#159FB5]/10 text-[var(--text-accent)] border border-[#159FB5]/25 hover:bg-[#159FB5]/20 transition-colors self-start sm:self-auto cursor-pointer"
+          icon={<Lock className="w-3.5 h-3.5 text-[var(--text-accent)]" />}
         >
-          <Lock className="w-3.5 h-3.5" />
-          <span>Open Full Scanner</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+          <span>Full Hybrid Scanner</span>
+          <ArrowRight className="w-3.5 h-3.5 ml-1" />
+        </Button>
       </div>
 
       {/* Quick Sample Messages */}
@@ -334,34 +344,61 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
         </div>
       </form>
 
-      {/* Honest Readiness Message & Local PII Summary (No Fake AI Results) */}
-      {scanSubmitted && (
+      {/* Real Local Rule-Based Screening Result */}
+      {scanSubmitted && quickScanResult && (
         <div
           role="status"
           className="mt-6 pt-5 border-t border-[var(--border-card)] animate-in fade-in duration-300 space-y-3"
         >
-          <div className="p-4 rounded-xl bg-[#159FB5]/10 border border-[#159FB5]/30 flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-[#159FB5]/20 text-[var(--text-accent)] shrink-0">
+          <div className="p-4 rounded-xl bg-[#0D5663]/10 border border-[#22D3EE]/30 flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-[#0D5663]/20 text-[#22D3EE] shrink-0">
               <Info className="w-5 h-5" />
             </div>
-            <div className="space-y-1.5 flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-xs sm:text-sm font-bold text-[var(--text-heading)]">
-                  Scanner interface is ready. AI analysis will be available after engine integration.
-                </p>
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge
+                    variant={
+                      quickScanResult.status === 'safe'
+                        ? 'safe'
+                        : quickScanResult.status === 'suspicious'
+                        ? 'suspicious'
+                        : 'threat'
+                    }
+                    size="sm"
+                    dot
+                  >
+                    {quickScanResult.status === 'safe'
+                      ? 'Low Risk'
+                      : quickScanResult.status === 'suspicious'
+                      ? 'Medium Risk'
+                      : 'High Risk'}
+                  </StatusBadge>
+                  <StatusBadge variant="local" size="sm">
+                    Deterministic Rule-Based
+                  </StatusBadge>
+                </div>
+                <span className="text-xs font-mono font-bold text-[var(--text-heading)]">
+                  Score: {quickScanResult.threatScore}/100
+                </span>
               </div>
+
+              <p className="text-xs sm:text-sm font-semibold text-[var(--text-heading)]">
+                {quickScanResult.summary}
+              </p>
+
               <p className="text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 text-[#2E8B57] font-semibold">
+                <span className="inline-flex items-center gap-1 text-[#22C55E] font-semibold">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Input validated ({inputText.trim().length.toLocaleString()} chars)
+                  Screened locally ({inputText.trim().length.toLocaleString()} chars)
                 </span>
                 {summary && summary.hasItems ? (
                   <span className="inline-flex items-center gap-1 text-[var(--text-accent)] font-semibold">
-                    &bull; <Shield className="w-3.5 h-3.5" /> {summary.totalCount} sensitive item(s) detected locally
+                    &bull; <Shield className="w-3.5 h-3.5" /> {summary.totalCount} PII item(s) masked
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-[#2E8B57] font-semibold">
-                    &bull; No standard PII patterns detected
+                  <span className="inline-flex items-center gap-1 text-[#22C55E] font-semibold">
+                    &bull; No standard PII detected
                   </span>
                 )}
                 {screenshot && (
@@ -371,29 +408,29 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
                 )}
               </p>
 
-              {/* Protected text preview snippet */}
               {summary && summary.hasItems && (
-                <div className="mt-2 pt-2 border-t border-[#159FB5]/20">
+                <div className="mt-2 pt-2 border-t border-[var(--border-card)]">
                   <p className="text-[11px] font-semibold text-[var(--text-heading)] mb-1">
                     Protected Preview (Client-Side Redaction):
                   </p>
                   <p className="p-2.5 rounded-lg bg-[var(--bg-main)] border border-[var(--border-card)] font-mono text-xs text-[var(--text-main)] line-clamp-2">
                     {maskedPreview}
                   </p>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-[11px] text-[var(--text-muted)]">
-                      Want to review individual masking toggles?
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage('scanner')}
-                      className="text-xs font-bold text-[var(--text-accent)] hover:underline inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      Open Full Privacy Review &rarr;
-                    </button>
-                  </div>
                 </div>
               )}
+
+              <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  Need contextual Cloud AI (Gemini 3.8 Flash) or granular PII toggles?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage('scanner')}
+                  className="text-xs font-bold text-[var(--text-accent)] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  Open Full Hybrid Scanner &rarr;
+                </button>
+              </div>
             </div>
           </div>
         </div>

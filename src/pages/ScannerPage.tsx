@@ -11,7 +11,10 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { useNavigation } from '@/context/NavigationContext'
+import { useSecurity } from '@/context/SecurityContext'
+import { abortCloudAiAnalysis } from '@/services/cloudAi'
 import {
   CloudAnalysisCard,
   HybridComparisonCard,
@@ -36,6 +39,7 @@ type ScannerStage = 'input' | 'review' | 'ready'
 
 export const ScannerPage: React.FC = () => {
   const { setCurrentPage } = useNavigation()
+  const { recordAnalysisScan } = useSecurity()
 
   // Workflow state
   const [stage, setStage] = useState<ScannerStage>('input')
@@ -93,6 +97,7 @@ export const ScannerPage: React.FC = () => {
   }
 
   const handleClearMessage = () => {
+    abortCloudAiAnalysis('CONSENT_REVOKED')
     setMessageText('')
     setMessageError(null)
     setStage('input')
@@ -107,6 +112,7 @@ export const ScannerPage: React.FC = () => {
   }
 
   const handleResetAll = () => {
+    abortCloudAiAnalysis('CONSENT_REVOKED')
     setMessageText('')
     setMessageError(null)
     setFileError(null)
@@ -155,8 +161,9 @@ export const ScannerPage: React.FC = () => {
 
   // User confirms protected message in Stage 2, advancing to Stage 3 (Ready & Analysis)
   const handleConfirmProtected = (maskedText: string, count: number) => {
-    // If text modified from previous confirmation, reset prior analysis and consent
+    // If text modified from previous confirmation, abort pending cloud requests & reset consent
     if (maskedText !== protectedMessage) {
+      abortCloudAiAnalysis('CONSENT_REVOKED')
       setOnDeviceAnalysis(null)
       setCloudAnalysis(null)
       setCloudConsent({
@@ -172,6 +179,26 @@ export const ScannerPage: React.FC = () => {
     window.scrollTo({ top: 120, behavior: 'smooth' })
   }
 
+  const handleLocalAnalysisComplete = (result: AnalysisRecord) => {
+    setOnDeviceAnalysis(result)
+    recordAnalysisScan({
+      protectedMessage,
+      maskedCount: redactedCount,
+      record: result,
+      sender: 'Message Scanner (Local)',
+    })
+  }
+
+  const handleCloudAnalysisComplete = (result: AnalysisRecord) => {
+    setCloudAnalysis(result)
+    recordAnalysisScan({
+      protectedMessage,
+      maskedCount: redactedCount,
+      record: result,
+      sender: 'Message Scanner (Cloud)',
+    })
+  }
+
   const isScanDisabled = messageText.trim().length === 0 || isProcessing
 
   return (
@@ -180,10 +207,13 @@ export const ScannerPage: React.FC = () => {
       <section className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-card)] shadow-[var(--shadow-card)] transition-colors duration-250">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2.5 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#159FB5]/10 text-[var(--text-accent)] border border-[#159FB5]/25 text-xs font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Hybrid AI Security Pipeline</span>
-            </div>
+            <StatusBadge
+              variant="ai"
+              size="md"
+              icon={<ShieldCheck className="w-3.5 h-3.5" />}
+            >
+              Hybrid AI Security Pipeline
+            </StatusBadge>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[var(--text-heading)] tracking-tight">
               Message Scanner
@@ -194,7 +224,7 @@ export const ScannerPage: React.FC = () => {
             </p>
 
             <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
-              Paste or type any suspicious SMS, chat message, or email below, and optionally attach a screenshot for visual reference. ContextShield scans for sensitive Personal Identifiable Information (PII) locally in your browser memory so you can mask private data before running on-device or consent-controlled cloud analysis.
+              Paste or type any suspicious SMS, chat message, or email below, and optionally attach a screenshot for visual reference. ContextShield scans for sensitive Personal Identifiable Information (PII) locally in your browser memory so you can mask private data before running local security rules, Gemini Nano, or consent-controlled Cloud AI.
             </p>
           </div>
 
@@ -214,9 +244,9 @@ export const ScannerPage: React.FC = () => {
               <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">
                 Privacy Boundary
               </p>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#2E8B57]">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#16A34A] dark:text-[#22C55E]">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Client-Side PII Redaction Verified</span>
+                <span>Client-Side PII Redaction Active</span>
               </div>
             </div>
           </div>
@@ -228,15 +258,15 @@ export const ScannerPage: React.FC = () => {
             <div
               className={`p-3 rounded-xl border flex items-center gap-3 transition-colors ${
                 stage === 'input'
-                  ? 'bg-[#159FB5]/10 border-[#159FB5] text-[var(--text-heading)] font-bold'
+                  ? 'bg-[#0D5663]/15 border-[#0D9488] dark:border-[#22D3EE] text-[var(--text-heading)] font-bold'
                   : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)]'
               }`}
             >
               <span
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   stage === 'input'
-                    ? 'bg-[#159FB5] text-white'
-                    : 'bg-[#A6C5C1]/30 text-[var(--text-muted)]'
+                    ? 'bg-[#0D5663] text-[#EAF4F8]'
+                    : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-card)]'
                 }`}
               >
                 1
@@ -250,15 +280,15 @@ export const ScannerPage: React.FC = () => {
             <div
               className={`p-3 rounded-xl border flex items-center gap-3 transition-colors ${
                 stage === 'review'
-                  ? 'bg-[#159FB5]/10 border-[#159FB5] text-[var(--text-heading)] font-bold'
+                  ? 'bg-[#0D5663]/15 border-[#0D9488] dark:border-[#22D3EE] text-[var(--text-heading)] font-bold'
                   : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)]'
               }`}
             >
               <span
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   stage === 'review'
-                    ? 'bg-[#159FB5] text-white'
-                    : 'bg-[#A6C5C1]/30 text-[var(--text-muted)]'
+                    ? 'bg-[#0D5663] text-[#EAF4F8]'
+                    : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-card)]'
                 }`}
               >
                 2
@@ -272,22 +302,22 @@ export const ScannerPage: React.FC = () => {
             <div
               className={`p-3 rounded-xl border flex items-center gap-3 transition-colors ${
                 stage === 'ready'
-                  ? 'bg-[#159FB5]/10 border-[#159FB5] text-[var(--text-heading)] font-bold'
+                  ? 'bg-[#0D5663]/15 border-[#0D9488] dark:border-[#22D3EE] text-[var(--text-heading)] font-bold'
                   : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)]'
               }`}
             >
               <span
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   stage === 'ready'
-                    ? 'bg-[#159FB5] text-white'
-                    : 'bg-[#A6C5C1]/30 text-[var(--text-muted)]'
+                    ? 'bg-[#0D5663] text-[#EAF4F8]'
+                    : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-card)]'
                 }`}
               >
                 3
               </span>
               <div className="text-xs">
-                <p className="font-bold">Hybrid AI Analysis</p>
-                <p className="text-[10px] opacity-75">On-device &amp; consent cloud</p>
+                <p className="font-bold">Security Analysis</p>
+                <p className="text-[10px] opacity-75">Local &amp; consent cloud</p>
               </div>
             </div>
           </div>
@@ -451,23 +481,28 @@ export const ScannerPage: React.FC = () => {
             /* VIEW B: INTERACTIVE DUAL ENGINES */
             <div className="space-y-6 sm:space-y-8">
               {/* Protected Payload Summary Card */}
-              <Card className="p-6 sm:p-8 border-2 border-[#2E8B57]/40 bg-[#2E8B57]/5">
+              <Card className="p-5 sm:p-6 border border-[#22C55E]/40 bg-[#22C55E]/5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border-card)]">
                   <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-xl bg-[#2E8B57]/15 text-[#2E8B57] shrink-0 mt-0.5">
+                    <div className="p-2.5 rounded-xl bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30 shrink-0 mt-0.5">
                       <ShieldCheck className="w-6 h-6" />
                     </div>
-                    <div>
-                      <h2 className="text-lg sm:text-xl font-bold text-[var(--text-heading)]">
-                        Protected Payload Verified
-                      </h2>
-                      <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
-                        Your message has been masked locally ({redactedCount} items redacted). No raw sensitive data leaves your device.
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text-heading)]">
+                          Protected Payload Verified
+                        </h2>
+                        <StatusBadge variant="safe" size="sm" dot>
+                          {redactedCount} {redactedCount === 1 ? 'Item' : 'Items'} Redacted
+                        </StatusBadge>
+                      </div>
+                      <p className="text-xs sm:text-sm text-[var(--text-muted)]">
+                        Your message has been masked locally in memory. Raw sensitive identifiers never leave your device.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Button
                       type="button"
                       variant="outline"
@@ -490,23 +525,23 @@ export const ScannerPage: React.FC = () => {
 
                 {/* Protected Message Box */}
                 <div className="mt-5 space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
-                      <Lock className="w-3.5 h-3.5 text-[#2E8B57]" />
-                      Protected Message (Analyzed by AI Models)
+                      <Lock className="w-3.5 h-3.5 text-[#22C55E]" />
+                      Protected Message Snapshot
                     </span>
                     <span className="text-[11px] font-mono text-[var(--text-muted)]">
                       {protectedMessage.length.toLocaleString()} characters
                     </span>
                   </div>
-                  <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] text-xs sm:text-sm font-mono leading-relaxed whitespace-pre-wrap select-text break-words shadow-xs">
+                  <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] text-xs sm:text-sm font-mono leading-relaxed whitespace-pre-wrap select-text break-words">
                     {protectedMessage}
                   </div>
                 </div>
 
                 {/* Attached Screenshot Visual Reference */}
                 {screenshot && (
-                  <div className="mt-5 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] flex items-center justify-between gap-3">
+                  <div className="mt-5 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <img
                         src={screenshot.previewUrl}
@@ -518,34 +553,34 @@ export const ScannerPage: React.FC = () => {
                           {screenshot.name}
                         </p>
                         <p className="text-[11px] text-[var(--text-muted)]">
-                          {formatFileSize(screenshot.size)} &bull; Screenshot Attachment (Visual Reference Preview Only &bull; Never Uploaded)
+                          {formatFileSize(screenshot.size)} &bull; Screenshot Attachment (Local Visual Reference Only &bull; Never Uploaded)
                         </p>
                       </div>
                     </div>
-                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#A6C5C1]/20 text-[var(--text-muted)] shrink-0">
+                    <StatusBadge variant="neutral" size="sm">
                       Preview Only
-                    </span>
+                    </StatusBadge>
                   </div>
                 )}
               </Card>
 
               {/* DUAL ANALYSIS ENGINES (Side-by-Side on Desktop, Stacked on Mobile) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-                {/* On-Device AI Card (Privacy-First / Local) */}
+                {/* Local Security Analysis Card */}
                 <OnDeviceAnalysisCard
                   protectedMessage={protectedMessage}
                   analysis={onDeviceAnalysis}
-                  onAnalysisComplete={result => setOnDeviceAnalysis(result)}
+                  onAnalysisComplete={handleLocalAnalysisComplete}
                 />
 
-                {/* Cloud AI Card (Gemini Cloud with Explicit Consent) */}
+                {/* Enhanced Cloud Analysis Card */}
                 <CloudAnalysisCard
                   protectedMessage={protectedMessage}
                   analysis={cloudAnalysis}
                   consentState={cloudConsent}
                   onConsentChange={setCloudConsent}
-                  onAnalysisComplete={result => setCloudAnalysis(result)}
-                  onRunLocalFallback={result => setOnDeviceAnalysis(result)}
+                  onAnalysisComplete={handleCloudAnalysisComplete}
+                  onRunLocalFallback={handleLocalAnalysisComplete}
                 />
               </div>
 

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { formatReportAsText } from '@/services/hybridReportEngine'
 import { getRiskLevelBadgeProps } from './analysisUtils'
 import type { FindingSeverity, FindingSource, UnifiedReport } from './types'
@@ -75,11 +76,11 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
       <Card className="p-6 sm:p-8 border-2 border-[var(--border-card)] shadow-lg bg-[var(--bg-card)]">
         {/* Top Action Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border-card)]">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={onBackToScanner}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[#159FB5]/15 text-[var(--text-main)] border border-[var(--border-card)] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 min-h-[34px] text-xs font-semibold px-3 py-1.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[#22D3EE]/12 text-[var(--text-main)] border border-[var(--border-card)] transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Scanner</span>
@@ -97,7 +98,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
               onClick={handleCopyReport}
               icon={
                 copied ? (
-                  <Check className="w-3.5 h-3.5 text-[#2E8B57]" />
+                  <Check className="w-3.5 h-3.5 text-[#22C55E]" />
                 ) : (
                   <Copy className="w-3.5 h-3.5 text-[var(--text-accent)]" />
                 )
@@ -111,7 +112,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
               variant="outline"
               size="sm"
               onClick={() => setShowClearConfirmModal(true)}
-              icon={<Trash2 className="w-3.5 h-3.5 text-[#E07A5F]" />}
+              icon={<Trash2 className="w-3.5 h-3.5 text-[#EF4444]" />}
             >
               Clear Report
             </Button>
@@ -131,21 +132,36 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
         {/* Overall Assessment Main Banner */}
         <div className="mt-6 flex flex-col lg:flex-row lg:items-start justify-between gap-6">
           <div className="space-y-3 max-w-3xl">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span
-                className={`text-xs font-bold px-3.5 py-1.5 rounded-full border ${badge.bgClass} ${badge.textClass} ${badge.borderClass} uppercase tracking-wider flex items-center gap-1.5`}
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge
+                variant={badge.variant}
+                size="md"
+                icon={
+                  report.assessment.overallRisk === 'HIGH' ? (
+                    <ShieldAlert className="w-4 h-4" />
+                  ) : report.assessment.overallRisk === 'LOW' ? (
+                    <ShieldCheck className="w-4 h-4" />
+                  ) : (
+                    <Shield className="w-4 h-4" />
+                  )
+                }
+                className="uppercase tracking-wider"
               >
-                {report.assessment.overallRisk === 'HIGH' ? (
-                  <ShieldAlert className="w-4 h-4" />
-                ) : report.assessment.overallRisk === 'LOW' ? (
-                  <ShieldCheck className="w-4 h-4" />
-                ) : (
-                  <Shield className="w-4 h-4" />
-                )}
-                <span>Overall Risk: {badge.label}</span>
-              </span>
+                Overall Risk: {badge.label}
+              </StatusBadge>
 
-              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[var(--bg-main)] border border-[var(--border-card)] text-[var(--text-muted)]">
+              <StatusBadge
+                variant={
+                  report.completionStatus === 'local_only'
+                    ? 'local'
+                    : report.completionStatus === 'cloud_only' || report.completionStatus === 'cloud_and_local'
+                    ? 'ai'
+                    : report.completionStatus === 'both_completed' || report.completionStatus === 'on_device_only'
+                    ? 'safe'
+                    : 'neutral'
+                }
+                size="md"
+              >
                 Status:{' '}
                 {report.completionStatus === 'both_completed'
                   ? 'Dual-AI Model Consensus'
@@ -158,7 +174,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                   : report.completionStatus === 'cloud_only'
                   ? 'Cloud AI Evaluation Only'
                   : 'Incomplete'}
-              </span>
+              </StatusBadge>
 
               <span className="text-[11px] text-[var(--text-muted)]">
                 {new Date(report.generatedAt).toLocaleString()}
@@ -184,7 +200,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
           <div className="w-full lg:w-72 shrink-0 p-4 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="font-bold text-[var(--text-heading)] uppercase tracking-wider text-[10px] flex items-center gap-1">
-                <Lock className="w-3 h-3 text-[#2E8B57]" />
+                <Lock className="w-3 h-3 text-[#22C55E]" />
                 Analyzed Payload
               </span>
               <span className="text-[10px] font-mono text-[var(--text-muted)]">
@@ -214,34 +230,34 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
 
       {/* 2. CONFLICT / MODEL DIVERGENCE BANNER (If Models Disagree) */}
       {report.conflictingFindings.length > 0 && (
-        <Card className="p-6 border-2 border-[#E07A5F]/50 bg-[#E07A5F]/10">
+        <Card className="p-6 border-2 border-[#F59E0B]/50 bg-[#F59E0B]/10">
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-[#E07A5F]/20 text-[#E07A5F] shrink-0 mt-0.5">
+            <div className="p-2 rounded-xl bg-[#F59E0B]/20 text-[#F59E0B] shrink-0 mt-0.5">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="space-y-2 flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-[#B8573D] dark:text-[#F3A58E]">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-bold text-[#B45309] dark:text-[#FBBF24]">
                   Model Divergence &amp; Discrepancy Notice
                 </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#E07A5F]/20 text-[#E07A5F]">
+                <StatusBadge variant="warning" size="sm">
                   Human Review Advised
-                </span>
+                </StatusBadge>
               </div>
               <p className="text-xs sm:text-sm text-[var(--text-main)] leading-relaxed">
-                The On-Device AI and Cloud AI models returned differing conclusions. ContextShield displays both perspectives transparently rather than averaging or discarding either assessment.
+                The Local/On-Device and Cloud AI evaluations returned differing conclusions. ContextShield displays both perspectives transparently rather than averaging or discarding either assessment.
               </p>
 
               <div className="space-y-2 pt-2">
                 {report.conflictingFindings.map(conflict => (
                   <div
                     key={conflict.id}
-                    className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[#E07A5F]/30 text-xs space-y-1.5"
+                    className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[#F59E0B]/30 text-xs space-y-1.5"
                   >
                     <p className="font-bold text-[var(--text-heading)]">{conflict.title}</p>
                     <p className="text-[var(--text-muted)]">{conflict.description}</p>
                     {conflict.conflictReason && (
-                      <p className="text-[11px] font-semibold text-[#B8573D] dark:text-[#F3A58E]">
+                      <p className="text-[11px] font-semibold text-[#B45309] dark:text-[#FBBF24]">
                         {conflict.conflictReason}
                       </p>
                     )}
@@ -253,37 +269,38 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
         </Card>
       )}
 
-      {/* 3. AI SOURCE COMPARISON GRID (On-Device AI vs Cloud AI) */}
+      {/* 3. ENGINE COMPARISON GRID (Local/On-Device vs Cloud AI) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-        {/* On-Device AI Card */}
+        {/* Local / On-Device Card */}
         <Card className="p-6 border border-[var(--border-card)] flex flex-col justify-between">
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--border-card)]">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-[#159FB5]/15 text-[var(--text-accent)]">
+            <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[var(--border-card)]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-lg bg-[#F59E0B]/15 text-[#D97706] dark:text-[#FBBF24]">
                   <Cpu className="w-5 h-5" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-sm font-bold text-[var(--text-heading)]">
-                    On-Device AI
+                    Local / On-Device Engine
                   </h3>
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    Chrome Prompt API (Local)
+                    Zero Network Transmission
                   </p>
                 </div>
               </div>
 
-              <span
-                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+              <StatusBadge
+                variant={
                   report.onDeviceSummary.status === 'completed'
-                    ? 'bg-[#2E8B57]/15 text-[#2E8B57] dark:text-[#67D59A]'
+                    ? 'safe'
                     : report.onDeviceSummary.status === 'failed'
-                    ? 'bg-[#E07A5F]/15 text-[#E07A5F]'
-                    : 'bg-[#A6C5C1]/20 text-[var(--text-muted)]'
-                }`}
+                    ? 'threat'
+                    : 'neutral'
+                }
+                size="sm"
               >
                 {report.onDeviceSummary.status.toUpperCase()}
-              </span>
+              </StatusBadge>
             </div>
 
             {report.onDeviceSummary.status === 'completed' ? (
@@ -303,7 +320,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
 
                 <div className="pt-2 border-t border-[var(--border-card)]">
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">
-                    Key On-Device Findings:
+                    Key Local Findings:
                   </p>
                   <ul className="space-y-1">
                     {report.onDeviceSummary.findings.slice(0, 3).map((f, i) => (
@@ -311,7 +328,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                         key={i}
                         className="p-1.5 rounded-md bg-[var(--bg-main)] text-[11px] text-[var(--text-main)] flex items-start gap-1.5"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#159FB5] shrink-0 mt-1" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shrink-0 mt-1" />
                         <span className="truncate">{f}</span>
                       </li>
                     ))}
@@ -323,14 +340,14 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                 <p className="font-semibold text-[var(--text-heading)]">Analysis Unavailable</p>
                 <p>
                   {report.onDeviceSummary.errorMessage ||
-                    'On-device Gemini Nano inference was not executed on this payload.'}
+                    'On-device Gemini Nano or local rules were not executed on this payload.'}
                 </p>
               </div>
             )}
           </div>
 
           <div className="mt-4 pt-3 border-t border-[var(--border-card)] text-[10px] text-[var(--text-muted)] flex items-center justify-between">
-            <span>Model: {report.onDeviceSummary.modelName}</span>
+            <span>Engine: {report.onDeviceSummary.modelName}</span>
             <span>Local Memory Only</span>
           </div>
         </Card>
@@ -338,12 +355,12 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
         {/* Cloud AI Card */}
         <Card className="p-6 border border-[var(--border-card)] flex flex-col justify-between">
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--border-card)]">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-[#35C6D9]/15 text-[#159FB5]">
+            <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[var(--border-card)]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-lg bg-[#22D3EE]/15 text-[#0891B2] dark:text-[#22D3EE]">
                   <Cloud className="w-5 h-5" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-sm font-bold text-[var(--text-heading)]">
                     Gemini Cloud AI
                   </h3>
@@ -353,17 +370,18 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                 </div>
               </div>
 
-              <span
-                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+              <StatusBadge
+                variant={
                   report.cloudSummary.status === 'completed'
-                    ? 'bg-[#159FB5]/15 text-[var(--text-accent)]'
+                    ? 'ai'
                     : report.cloudSummary.status === 'failed'
-                    ? 'bg-[#E07A5F]/15 text-[#E07A5F]'
-                    : 'bg-[#A6C5C1]/20 text-[var(--text-muted)]'
-                }`}
+                    ? 'threat'
+                    : 'neutral'
+                }
+                size="sm"
               >
                 {report.cloudSummary.status.toUpperCase()}
-              </span>
+              </StatusBadge>
             </div>
 
             {report.cloudSummary.status === 'completed' ? (
@@ -391,7 +409,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                         key={i}
                         className="p-1.5 rounded-md bg-[var(--bg-main)] text-[11px] text-[var(--text-main)] flex items-start gap-1.5"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#35C6D9] shrink-0 mt-1" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE] shrink-0 mt-1" />
                         <span className="truncate">{f}</span>
                       </li>
                     ))}
@@ -418,15 +436,15 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
 
       {/* 4. CORROBORATED COMMON FINDINGS */}
       {report.commonFindings.length > 0 && (
-        <Card className="p-6 border border-[#2E8B57]/30 bg-[#2E8B57]/5 space-y-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-card)]">
-            <CheckCircle2 className="w-5 h-5 text-[#2E8B57]" />
+        <Card className="p-6 border border-[#22C55E]/30 bg-[#22C55E]/5 space-y-4">
+          <div className="flex flex-wrap items-center gap-2.5 pb-3 border-b border-[var(--border-card)]">
+            <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
             <h3 className="text-base font-bold text-[var(--text-heading)]">
               Corroborated Common Findings ({report.commonFindings.length})
             </h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2E8B57]/15 text-[#2E8B57] dark:text-[#67D59A]">
-              Both Models Agree
-            </span>
+            <StatusBadge variant="safe" size="sm">
+              Both AI Models Agree
+            </StatusBadge>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -435,7 +453,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                 key={item.id}
                 className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] space-y-1 text-xs"
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-bold text-[var(--text-heading)]">{item.title}</span>
                   <SeverityBadge severity={item.severity} />
                 </div>
@@ -449,7 +467,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
       {/* 5. ADDITIONAL / SINGLE-MODEL FINDINGS */}
       {report.additionalFindings.length > 0 && (
         <Card className="p-6 border border-[var(--border-card)] space-y-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-card)]">
+          <div className="flex flex-wrap items-center gap-2.5 pb-3 border-b border-[var(--border-card)]">
             <Layers className="w-5 h-5 text-[var(--text-accent)]" />
             <h3 className="text-base font-bold text-[var(--text-heading)]">
               {report.completionStatus === 'cloud_only'
@@ -460,7 +478,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                 ? `Local Rule Findings (${report.additionalFindings.length})`
                 : `Distinct Engine Findings (${report.additionalFindings.length})`}
             </h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--bg-main)] text-[var(--text-muted)] border border-[var(--border-card)]">
+            <StatusBadge variant="neutral" size="sm">
               {report.completionStatus === 'cloud_only'
                 ? 'Deep Context Insights'
                 : report.completionStatus === 'on_device_only'
@@ -468,7 +486,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                 : report.completionStatus === 'local_only'
                 ? 'Deterministic Rule Insights'
                 : 'Single Source Insights'}
-            </span>
+            </StatusBadge>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -477,9 +495,9 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
                 key={item.id}
                 className="p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-1.5 text-xs"
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-bold text-[var(--text-heading)]">{item.title}</span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <SourceBadge source={item.source} />
                     <SeverityBadge severity={item.severity} />
                   </div>
@@ -573,9 +591,9 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
 
       {/* 7. RECOMMENDED PROTECTIVE ACTIONS */}
       {report.recommendedActions.length > 0 && (
-        <Card className="p-6 border border-[#2E8B57]/30 bg-[#2E8B57]/5 space-y-4">
+        <Card className="p-6 border border-[#22C55E]/30 bg-[#22C55E]/5 space-y-4">
           <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-card)]">
-            <CheckCircle2 className="w-5 h-5 text-[#2E8B57]" />
+            <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
             <h3 className="text-base font-bold text-[var(--text-heading)]">
               Recommended Protective Directives
             </h3>
@@ -585,9 +603,9 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
             {report.recommendedActions.map((action, idx) => (
               <div
                 key={idx}
-                className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[#2E8B57]/20 flex items-start gap-2.5 text-xs text-[var(--text-heading)] font-semibold shadow-xs"
+                className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[#22C55E]/25 flex items-start gap-2.5 text-xs text-[var(--text-heading)] font-semibold shadow-xs"
               >
-                <CheckCircle2 className="w-4 h-4 text-[#2E8B57] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0 mt-0.5" />
                 <span>{action}</span>
               </div>
             ))}
@@ -618,8 +636,8 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
         >
           <div className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-card)] rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-[#E07A5F]">
-              <div className="p-2.5 rounded-xl bg-[#E07A5F]/15">
+            <div className="flex items-center gap-3 text-[#EF4444]">
+              <div className="p-2.5 rounded-xl bg-[#EF4444]/15">
                 <AlertCircle className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-[var(--text-heading)]">
@@ -662,29 +680,29 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
 function SourceBadge({ source }: { source: FindingSource }) {
   if (source === 'both') {
     return (
-      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#159FB5]/20 text-[var(--text-accent)] uppercase">
+      <StatusBadge variant="info" size="sm" className="uppercase">
         Both AI
-      </span>
+      </StatusBadge>
     )
   }
   if (source === 'cloud') {
     return (
-      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#35C6D9]/20 text-[#159FB5] uppercase">
+      <StatusBadge variant="ai" size="sm" className="uppercase">
         Cloud AI
-      </span>
+      </StatusBadge>
     )
   }
   if (source === 'local_rules') {
     return (
-      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#E07A5F]/15 text-[#B8573D] dark:text-[#F3A58E] uppercase">
+      <StatusBadge variant="local" size="sm" className="uppercase">
         Local Rules
-      </span>
+      </StatusBadge>
     )
   }
   return (
-    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#2E8B57]/15 text-[#2E8B57] dark:text-[#67D59A] uppercase">
+    <StatusBadge variant="safe" size="sm" className="uppercase">
       Gemini Nano
-    </span>
+    </StatusBadge>
   )
 }
 
@@ -692,28 +710,28 @@ function SeverityBadge({ severity }: { severity: FindingSeverity }) {
   switch (severity) {
     case 'high':
       return (
-        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#E07A5F]/15 text-[#E07A5F] uppercase">
+        <StatusBadge variant="threat" size="sm" className="uppercase">
           High
-        </span>
+        </StatusBadge>
       )
     case 'medium':
       return (
-        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#D7C4A8]/30 text-[#B87A3D] dark:text-[#E8BA7E] uppercase">
+        <StatusBadge variant="suspicious" size="sm" className="uppercase">
           Med
-        </span>
+        </StatusBadge>
       )
     case 'low':
       return (
-        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#2E8B57]/15 text-[#2E8B57] dark:text-[#67D59A] uppercase">
+        <StatusBadge variant="safe" size="sm" className="uppercase">
           Low
-        </span>
+        </StatusBadge>
       )
     case 'info':
     default:
       return (
-        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--bg-main)] text-[var(--text-muted)] uppercase">
+        <StatusBadge variant="neutral" size="sm" className="uppercase">
           Info
-        </span>
+        </StatusBadge>
       )
   }
 }

@@ -188,6 +188,7 @@ export type AnalysisErrorCode =
   | 'RATE_LIMITED'
   | 'AUTH_ERROR'
   | 'TIMEOUT'
+  | 'CANCELLED'
   | 'SERVICE_UNAVAILABLE'
   | 'UNKNOWN'
 

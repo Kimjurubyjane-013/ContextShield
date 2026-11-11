@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Modal } from '@/components/common/Modal'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import type { ScanResult } from '@/types'
 
 export interface ScanDetailModalProps {
@@ -36,10 +37,10 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
             <div
               className={`p-3 rounded-xl ${
                 scan.status === 'safe'
-                  ? 'bg-[#2E8B57]/15 text-[#2E8B57]'
+                  ? 'bg-[#22C55E]/15 text-[#22C55E]'
                   : scan.status === 'suspicious'
-                  ? 'bg-[#E07A5F]/15 text-[#E07A5F]'
-                  : 'bg-[#D9383A]/15 text-[#D9383A]'
+                  ? 'bg-[#F59E0B]/15 text-[#F59E0B]'
+                  : 'bg-[#EF4444]/15 text-[#EF4444]'
               }`}
             >
               {scan.status === 'safe' ? (
@@ -51,7 +52,7 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Badge status={scan.status}>
                   {scan.status === 'safe'
                     ? 'Safe Message'
@@ -60,9 +61,9 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
                     : 'High-Risk Threat'}
                 </Badge>
                 {scan.isDemo && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#A6C5C1]/20 text-[var(--text-muted)] font-mono">
+                  <StatusBadge variant="neutral" size="sm" className="font-mono">
                     DEMO DATA
-                  </span>
+                  </StatusBadge>
                 )}
               </div>
               <p className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
@@ -81,10 +82,10 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
               <span
                 className={`text-2xl font-black ${
                   scan.status === 'safe'
-                    ? 'text-[#2E8B57]'
+                    ? 'text-[#22C55E]'
                     : scan.status === 'suspicious'
-                    ? 'text-[#E07A5F]'
-                    : 'text-[#D9383A]'
+                    ? 'text-[#F59E0B]'
+                    : 'text-[#EF4444]'
                 }`}
               >
                 {scan.threatScore}
@@ -112,7 +113,7 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
 
         {/* Security Summary & Signals */}
         <div className="space-y-3">
-          <div className="p-3.5 rounded-xl bg-[#159FB5]/10 border border-[#159FB5]/25">
+          <div className="p-3.5 rounded-xl bg-[#0D5663]/10 border border-[#0D9488]/25 dark:border-[#22D3EE]/25">
             <p className="text-xs font-bold text-[var(--text-accent)] mb-1">
               Analysis Evaluation
             </p>
@@ -133,7 +134,7 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
                   key={i}
                   className="flex items-start gap-2 text-xs text-[var(--text-muted)] bg-[var(--bg-main)] p-2.5 rounded-lg border border-[var(--border-card)]"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#159FB5] shrink-0 mt-1.5" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE] shrink-0 mt-1.5" />
                   <span>{reason}</span>
                 </li>
               ))}
@@ -143,7 +144,7 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
 
         {/* Locally Redacted PII list */}
         {scan.piiItems && scan.piiItems.length > 0 && (
-          <div className="p-3.5 rounded-xl bg-[#A6C5C1]/15 border border-[#A6C5C1]/30">
+          <div className="p-3.5 rounded-xl bg-[#0D5663]/10 border border-[var(--border-card)]">
             <div className="flex items-center gap-2 mb-2 text-[var(--text-heading)]">
               <EyeOff className="w-4 h-4 text-[var(--text-accent)]" />
               <span className="text-xs font-bold uppercase tracking-wider">

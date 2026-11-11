@@ -10,6 +10,7 @@ import {
   isTransientError,
   normalizeAnalysisError,
   safeString,
+  shouldAutoRetryCloudError,
   toAnalysisErrorState,
 } from '../errorUtils.ts'
 
@@ -134,7 +135,58 @@ export function runErrorUtilsTests() {
   assertEqual(safeString(true), 'true')
   assertEqual(safeString({ a: 1 }), '{"a":1}')
   assertEqual(safeString(Symbol('test')), 'Symbol(test)')
+
+  // Test 9: Firebase SDK DOMException('Timeout has expired.', 'AbortError') with legacy code=20
+  const sdkTimeoutDomErr = new DOMException('Timeout has expired.', 'AbortError')
+  assertEqual(sdkTimeoutDomErr.code, 20, 'Verify DOMException ABORT_ERR has numeric code 20')
+  assertEqual(
+    extractStatusCode(sdkTimeoutDomErr),
+    undefined,
+    'DOMException code 20 must NOT be misread as an HTTP status code'
+  )
+  const normalizedTimeout = normalizeAnalysisError(sdkTimeoutDomErr)
+  assertEqual(normalizedTimeout.suggestedErrorCode, 'TIMEOUT')
+  const mappedTimeout = toAnalysisErrorState(sdkTimeoutDomErr)
+  assertEqual(mappedTimeout.code, 'TIMEOUT')
+  assertEqual(mappedTimeout.title, 'Cloud Request Timed Out')
+  assertEqual(shouldAutoRetryCloudError(sdkTimeoutDomErr, 60000, 60000), false)
+
+  // Test 10: Cancellation markers must map cleanly to CANCELLED with retryable=false
+  const cancelledErr = new DOMException('CLOUD_ABORT_USER_CANCELLED: Cancelled', 'AbortError')
+  const mappedCancel = toAnalysisErrorState(cancelledErr)
+  assertEqual(mappedCancel.code, 'CANCELLED')
+  assertEqual(mappedCancel.retryable, false)
+  assertEqual(shouldAutoRetryCloudError(cancelledErr, 500, 500), false)
+
+  // Test 11: shouldAutoRetryCloudError gates retries accurately
+  assertEqual(
+    shouldAutoRetryCloudError({ status: 429, message: 'Per-minute quota limit' }, 450, 450),
+    true,
+    'Fast transient 429 rate-limit hiccup under 12s should retry'
+  )
+  assertEqual(
+    shouldAutoRetryCloudError(
+      {
+        status: 429,
+        message: 'GenerateRequestsPerDayPerProjectPerModel exceeded',
+      },
+      450,
+      450
+    ),
+    false,
+    'Daily quota exhaustion must NEVER auto-retry'
+  )
+  assertEqual(
+    shouldAutoRetryCloudError({ status: 503, message: 'Model overloaded' }, 900, 900),
+    false,
+    'MODEL_OVERLOADED should skip automatic retries'
+  )
+  assertEqual(
+    shouldAutoRetryCloudError({ message: 'network connection reset' }, 15000, 15000),
+    false,
+    'Slow errors >= 12000ms must NOT trigger automatic retries'
+  )
 }
 
 runErrorUtilsTests()
-console.log('✓ All 8 test suites passed successfully!')
+console.log('✓ All 11 errorUtils test suites passed successfully!')

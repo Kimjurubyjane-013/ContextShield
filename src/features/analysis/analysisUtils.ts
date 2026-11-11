@@ -119,6 +119,7 @@ export function compareAnalyses(
 
 export function getRiskLevelBadgeProps(risk: AnalysisRiskLevel): {
   label: string
+  variant: 'threat' | 'warning' | 'safe' | 'neutral'
   bgClass: string
   textClass: string
   borderClass: string
@@ -127,29 +128,33 @@ export function getRiskLevelBadgeProps(risk: AnalysisRiskLevel): {
     case 'HIGH':
       return {
         label: 'High Risk',
-        bgClass: 'bg-[#E07A5F]/15',
-        textClass: 'text-[#E07A5F] dark:text-[#F3A58E]',
-        borderClass: 'border-[#E07A5F]/30',
+        variant: 'threat',
+        bgClass: 'bg-[#EF4444]/15',
+        textClass: 'text-[#B91C1C] dark:text-[#F87171]',
+        borderClass: 'border-[#EF4444]/35',
       }
     case 'MEDIUM':
       return {
         label: 'Medium Risk',
-        bgClass: 'bg-[#D7C4A8]/25',
-        textClass: 'text-[#B87A3D] dark:text-[#E8BA7E]',
-        borderClass: 'border-[#D7C4A8]/40',
+        variant: 'warning',
+        bgClass: 'bg-[#F59E0B]/15',
+        textClass: 'text-[#B45309] dark:text-[#FBBF24]',
+        borderClass: 'border-[#F59E0B]/35',
       }
     case 'LOW':
       return {
         label: 'Low Risk',
-        bgClass: 'bg-[#2E8B57]/15',
-        textClass: 'text-[#2E8B57] dark:text-[#67D59A]',
-        borderClass: 'border-[#2E8B57]/30',
+        variant: 'safe',
+        bgClass: 'bg-[#22C55E]/15',
+        textClass: 'text-[#15803D] dark:text-[#4ADE80]',
+        borderClass: 'border-[#22C55E]/35',
       }
     case 'UNKNOWN':
     default:
       return {
         label: 'Indeterminate Risk',
-        bgClass: 'bg-[#A6C5C1]/20',
+        variant: 'neutral',
+        bgClass: 'bg-[#64748B]/15',
         textClass: 'text-[var(--text-muted)]',
         borderClass: 'border-[var(--border-card)]',
       }

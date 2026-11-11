@@ -13,6 +13,7 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Modal } from '@/components/common/Modal'
 import { ScanDetailModal } from '@/components/common/ScanDetailModal'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { EmptyIllustration } from '@/components/illustrations/EmptyIllustration'
 import { useNavigation } from '@/context/NavigationContext'
 import { useSecurity } from '@/context/SecurityContext'
@@ -52,10 +53,13 @@ export const HistoryPage: React.FC = () => {
       {/* Page Header */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-card)] shadow-[var(--shadow-card)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-colors duration-250">
         <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#159FB5]/10 text-[var(--text-accent)] text-xs font-semibold">
-            <HistoryIcon className="w-3.5 h-3.5" />
-            <span>Audit Trail</span>
-          </div>
+          <StatusBadge
+            variant="info"
+            size="md"
+            icon={<HistoryIcon className="w-3.5 h-3.5" />}
+          >
+            Audit Trail
+          </StatusBadge>
           <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-heading)] tracking-tight">
             Scan History &amp; Security Audit
           </h1>
@@ -70,7 +74,7 @@ export const HistoryPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setClearModalOpen(true)}
-            icon={<Trash2 className="w-4 h-4 text-[#E07A5F]" />}
+            icon={<Trash2 className="w-4 h-4 text-[#EF4444]" />}
           >
             Clear All History
           </Button>
@@ -85,7 +89,7 @@ export const HistoryPage: React.FC = () => {
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'all'
-                ? 'bg-[#159FB5] text-white shadow-xs'
+                ? 'bg-[#0D5663] text-[#EAF4F8] shadow-xs border border-[#22D3EE]/35'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
@@ -95,8 +99,8 @@ export const HistoryPage: React.FC = () => {
             onClick={() => setStatusFilter('safe')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'safe'
-                ? 'bg-[#2E8B57] text-white shadow-xs'
-                : 'text-[var(--text-muted)] hover:text-[#2E8B57]'
+                ? 'bg-[#22C55E] text-[#05121E] font-bold shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[#22C55E]'
             }`}
           >
             Safe ({counts.safe})
@@ -105,8 +109,8 @@ export const HistoryPage: React.FC = () => {
             onClick={() => setStatusFilter('suspicious')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'suspicious'
-                ? 'bg-[#E07A5F] text-white shadow-xs'
-                : 'text-[var(--text-muted)] hover:text-[#E07A5F]'
+                ? 'bg-[#F59E0B] text-[#05121E] font-bold shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[#F59E0B]'
             }`}
           >
             Suspicious ({counts.suspicious})
@@ -115,8 +119,8 @@ export const HistoryPage: React.FC = () => {
             onClick={() => setStatusFilter('threat')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'threat'
-                ? 'bg-[#D9383A] text-white shadow-xs'
-                : 'text-[var(--text-muted)] hover:text-[#D9383A]'
+                ? 'bg-[#EF4444] text-white font-bold shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[#EF4444]'
             }`}
           >
             Threats ({counts.threat})
@@ -131,7 +135,7 @@ export const HistoryPage: React.FC = () => {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Filter scans by sender, content, or risk..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-[var(--bg-card)] border border-[var(--border-card)] text-[var(--text-main)] placeholder-[var(--text-muted)]/70 focus:outline-none focus:ring-2 focus:ring-[#159FB5]/40"
+            className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-[var(--bg-card)] border border-[var(--border-card)] text-[var(--text-main)] placeholder-[var(--text-muted)]/70 focus:outline-none focus:ring-2 focus:ring-[#22D3EE]/40"
           />
         </div>
       </div>
@@ -169,10 +173,10 @@ export const HistoryPage: React.FC = () => {
                 <div
                   className={`p-2.5 rounded-xl shrink-0 mt-0.5 sm:mt-0 ${
                     item.status === 'safe'
-                      ? 'bg-[#2E8B57]/15 text-[#2E8B57]'
+                      ? 'bg-[#22C55E]/15 text-[#22C55E]'
                       : item.status === 'suspicious'
-                      ? 'bg-[#E07A5F]/15 text-[#E07A5F]'
-                      : 'bg-[#D9383A]/15 text-[#D9383A]'
+                      ? 'bg-[#F59E0B]/15 text-[#F59E0B]'
+                      : 'bg-[#EF4444]/15 text-[#EF4444]'
                   }`}
                 >
                   {item.status === 'safe' ? (
@@ -200,9 +204,9 @@ export const HistoryPage: React.FC = () => {
                       &bull; {item.timestamp}
                     </span>
                     {item.isDemo && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#A6C5C1]/20 text-[var(--text-muted)] font-mono">
+                      <StatusBadge variant="neutral" size="sm" className="font-mono">
                         DEMO
-                      </span>
+                      </StatusBadge>
                     )}
                   </div>
                   <p className="text-xs text-[var(--text-muted)] line-clamp-2 font-mono">
@@ -220,10 +224,10 @@ export const HistoryPage: React.FC = () => {
                   <span
                     className={`text-sm font-black ${
                       item.status === 'safe'
-                        ? 'text-[#2E8B57]'
+                        ? 'text-[#22C55E]'
                         : item.status === 'suspicious'
-                        ? 'text-[#E07A5F]'
-                        : 'text-[#D9383A]'
+                        ? 'text-[#F59E0B]'
+                        : 'text-[#EF4444]'
                     }`}
                   >
                     {item.threatScore}/100
