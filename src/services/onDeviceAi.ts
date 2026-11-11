@@ -9,9 +9,9 @@ import {
   type AnalysisErrorState,
   type AnalysisRecord,
   type OnDeviceModelReadiness,
-} from '@/features/analysis/types'
-import { buildAnalysisPrompt, parseAndValidateAiResponse } from './aiPromptUtils'
-import { getFirebaseAppInstance, getFirebaseConfigStatus } from './firebaseConfig'
+} from '../features/analysis/types.ts'
+import { buildAnalysisPrompt, parseAndValidateAiResponse } from './aiPromptUtils.ts'
+import { getFirebaseAppInstance, getFirebaseConfigStatus } from './firebaseConfig.ts'
 
 // Window AI type extensions for Chrome Prompt API diagnostics
 interface WindowWithAi extends Window {
@@ -47,6 +47,29 @@ export function hasOnDevicePromptApiSupport(): boolean {
 let cachedReadiness: OnDeviceModelReadiness | null = null
 
 /**
+ * Synchronous probe to immediately check whether on-device Prompt API is missing.
+ * Runs in 0ms on initial render without blocking button interaction.
+ */
+export function getSynchronousReadiness(): OnDeviceModelReadiness | null {
+  if (typeof window === 'undefined') {
+    return {
+      status: 'unsupported',
+      statusMessage: 'On-device AI is only available in supported browser environments.',
+    }
+  }
+  if (!hasOnDevicePromptApiSupport()) {
+    const res: OnDeviceModelReadiness = {
+      status: 'unsupported',
+      statusMessage:
+        'Browser does not support the Chrome Prompt API. On-device Gemini Nano requires Chrome 128+ with flags enabled.',
+    }
+    cachedReadiness = res
+    return res
+  }
+  return cachedReadiness
+}
+
+/**
  * Checks on-device model availability.
  */
 export async function checkOnDeviceReadiness(forceRefresh = false): Promise<OnDeviceModelReadiness> {
@@ -66,11 +89,13 @@ export async function checkOnDeviceReadiness(forceRefresh = false): Promise<OnDe
 
   // 1. Check direct browser Prompt API support
   if (!lm) {
-    return {
+    const res: OnDeviceModelReadiness = {
       status: 'unsupported',
       statusMessage:
         'Browser does not support the Chrome Prompt API. On-device Gemini Nano requires Chrome 128+ with flags enabled.',
     }
+    cachedReadiness = res
+    return res
   }
 
   try {

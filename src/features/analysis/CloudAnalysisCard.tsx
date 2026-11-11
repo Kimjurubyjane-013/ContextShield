@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { runCloudAiAnalysis } from '@/services/cloudAi'
+import { abortCloudAiAnalysis, runCloudAiAnalysis } from '@/services/cloudAi'
 import { runLocalRuleBasedAnalysis } from '@/services/localSecurityEngine'
 import { toAnalysisErrorState } from '@/services/errorUtils'
 import { getFirebaseConfigStatus } from '@/services/firebaseConfig'
@@ -48,7 +48,31 @@ export const CloudAnalysisCard: React.FC<CloudAnalysisCardProps> = ({
 }) => {
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [errorState, setErrorState] = useState<AnalysisErrorState | null>(null)
+
+  // Track elapsed seconds during analysis for real-time responsiveness
+  React.useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | undefined
+    if (isAnalyzing) {
+      setElapsedSeconds(0)
+      timer = setInterval(() => {
+        setElapsedSeconds(s => s + 1)
+      }, 1000)
+    } else {
+      setElapsedSeconds(0)
+    }
+    return () => {
+      if (timer) clearInterval(timer)
+    }
+  }, [isAnalyzing])
+
+  // Clean up active request on unmount
+  React.useEffect(() => {
+    return () => {
+      abortCloudAiAnalysis()
+    }
+  }, [])
 
   const fbStatus = getFirebaseConfigStatus()
   const trimmed = protectedMessage.trim()
@@ -136,13 +160,15 @@ export const CloudAnalysisCard: React.FC<CloudAnalysisCardProps> = ({
               </span>
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  abortCloudAiAnalysis()
+                  setIsAnalyzing(false)
                   onConsentChange({
                     hasConsented: false,
                     consentedAt: null,
                     consentedMessageSnapshot: null,
                   })
-                }
+                }}
                 className="text-[11px] text-[var(--text-muted)] hover:text-[#E07A5F] underline cursor-pointer"
               >
                 Revoke
@@ -347,10 +373,12 @@ export const CloudAnalysisCard: React.FC<CloudAnalysisCardProps> = ({
       </div>
 
       {/* Action Footer */}
-      <div className="mt-6 pt-4 border-t border-[var(--border-card)] flex items-center justify-between gap-3">
+      <div className="mt-6 pt-4 border-t border-[var(--border-card)] flex flex-wrap items-center justify-between gap-3">
         <span className="text-[11px] text-[var(--text-muted)]">
           {errorState?.code === 'DAILY_QUOTA_EXCEEDED'
-            ? 'Cloud AI unavailable &bull; Daily quota reached'
+            ? 'Cloud AI unavailable • Daily quota reached'
+            : isAnalyzing
+            ? `Inference in progress (${elapsedSeconds}s) • Bounded 35s timeout`
             : analysis
             ? 'Transmitted only masked text'
             : isConsentValid
@@ -358,41 +386,62 @@ export const CloudAnalysisCard: React.FC<CloudAnalysisCardProps> = ({
             : 'Explicit consent required'}
         </span>
 
-        {isConsentValid ? (
-          <Button
-            type="button"
-            variant={errorState?.code === 'DAILY_QUOTA_EXCEEDED' ? 'outline' : 'primary'}
-            size="sm"
-            disabled={isAnalyzing || errorState?.code === 'DAILY_QUOTA_EXCEEDED'}
-            onClick={() => executeCloudAnalysis(consentState)}
-            icon={
-              isAnalyzing ? (
-                <Sparkles className="w-4 h-4 animate-spin" />
-              ) : (
-                <RotateCcw className="w-4 h-4" />
-              )
-            }
-          >
-            {isAnalyzing
-              ? 'Analyzing in Cloud...'
-              : errorState?.code === 'DAILY_QUOTA_EXCEEDED'
-              ? 'Daily Quota Reached'
-              : analysis
-              ? 'Re-run Cloud Analysis'
-              : 'Run Cloud Analysis'}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={errorState?.code === 'DAILY_QUOTA_EXCEEDED'}
-            onClick={handleOpenConsentModal}
-            icon={<Shield className="w-4 h-4 text-[var(--text-accent)]" />}
-          >
-            {errorState?.code === 'DAILY_QUOTA_EXCEEDED' ? 'Daily Quota Reached' : 'Review Consent & Analyze'}
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {isAnalyzing && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                abortCloudAiAnalysis()
+                setIsAnalyzing(false)
+                if (onRunLocalFallback && trimmed) {
+                  const localRecord = runLocalRuleBasedAnalysis(trimmed)
+                  onRunLocalFallback(localRecord)
+                }
+              }}
+              icon={<Shield className="w-3.5 h-3.5 text-[#159FB5]" />}
+            >
+              Cancel &amp; Run Local
+            </Button>
+          )}
+
+          {isConsentValid ? (
+            <Button
+              type="button"
+              variant={errorState?.code === 'DAILY_QUOTA_EXCEEDED' ? 'outline' : 'primary'}
+              size="sm"
+              disabled={isAnalyzing || errorState?.code === 'DAILY_QUOTA_EXCEEDED'}
+              onClick={() => executeCloudAnalysis(consentState)}
+              icon={
+                isAnalyzing ? (
+                  <Sparkles className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )
+              }
+            >
+              {isAnalyzing
+                ? `Analyzing in Cloud (${elapsedSeconds}s)...`
+                : errorState?.code === 'DAILY_QUOTA_EXCEEDED'
+                ? 'Daily Quota Reached'
+                : analysis
+                ? 'Re-run Cloud Analysis'
+                : 'Run Cloud Analysis'}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={errorState?.code === 'DAILY_QUOTA_EXCEEDED'}
+              onClick={handleOpenConsentModal}
+              icon={<Shield className="w-4 h-4 text-[var(--text-accent)]" />}
+            >
+              {errorState?.code === 'DAILY_QUOTA_EXCEEDED' ? 'Daily Quota Reached' : 'Review Consent & Analyze'}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Cloud Consent Modal */}

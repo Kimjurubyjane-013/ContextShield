@@ -385,11 +385,14 @@ export function parseQuotaErrorDetails(err: unknown): QuotaErrorDetails {
   ) {
     category = 'RATE_LIMIT_EXCEEDED'
   }
-  // 5. MODEL_OVERLOADED (503 / 504 / service overloaded)
+  // 5. MODEL_OVERLOADED (503 / 504 / 500 high demand / service overloaded)
   else if (
     statusCode === 503 ||
     statusCode === 504 ||
     fullText.includes('overloaded') ||
+    fullText.includes('high demand') ||
+    fullText.includes('spikes in demand') ||
+    fullText.includes('experiencing high demand') ||
     fullText.includes('service unavailable') ||
     fullText.includes('deadline_expired') ||
     fullText.includes('deadline expired')

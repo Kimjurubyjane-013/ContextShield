@@ -101,7 +101,7 @@ async function getCachedHybridModel(mode: HybridInferenceMode): Promise<any> {
     }
   }
 
-  const model = getGenerativeModel(cachedHybridAi, modelConfig, { timeout: 90000 })
+  const model = getGenerativeModel(cachedHybridAi, modelConfig, { timeout: 35000 })
   cachedModels.set(mode, model)
   return model
 }

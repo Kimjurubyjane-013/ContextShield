@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { checkOnDeviceReadiness, runOnDeviceAnalysis } from '@/services/onDeviceAi'
+import { checkOnDeviceReadiness, getSynchronousReadiness, runOnDeviceAnalysis } from '@/services/onDeviceAi'
 import { runLocalRuleBasedAnalysis } from '@/services/localSecurityEngine'
 import { toAnalysisErrorState } from '@/services/errorUtils'
 import { getRiskLevelBadgeProps } from './analysisUtils'
@@ -32,19 +32,46 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
   analysis,
   onAnalysisComplete,
 }) => {
-  const [readiness, setReadiness] = useState<OnDeviceModelReadiness | null>(null)
-  const [isCheckingReadiness, setIsCheckingReadiness] = useState(true)
+  const initialReadiness = getSynchronousReadiness()
+  const isInitiallyUnsupported = initialReadiness?.status === 'unsupported'
+
+  const [readiness, setReadiness] = useState<OnDeviceModelReadiness | null>(initialReadiness)
+  const [isCheckingReadiness, setIsCheckingReadiness] = useState(!isInitiallyUnsupported && initialReadiness === null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null)
-  const [errorState, setErrorState] = useState<AnalysisErrorState | null>(null)
+  const [errorState, setErrorState] = useState<AnalysisErrorState | null>(
+    isInitiallyUnsupported
+      ? {
+          code: 'ON_DEVICE_UNAVAILABLE',
+          title: 'On-Device AI Unavailable',
+          message:
+            initialReadiness?.statusMessage ||
+            'Browser does not support the Chrome Prompt API. On-device Gemini Nano requires Chrome 128+ with flags enabled.',
+          retryable: false,
+        }
+      : null
+  )
 
   useEffect(() => {
     let isMounted = true
+    if (isInitiallyUnsupported) {
+      return
+    }
     const inspect = async () => {
       setIsCheckingReadiness(true)
       const res = await checkOnDeviceReadiness()
       if (isMounted) {
         setReadiness(res)
+        if (res.status === 'unsupported' || res.status === 'no') {
+          setErrorState(prev =>
+            prev || {
+              code: 'ON_DEVICE_UNAVAILABLE',
+              title: 'On-Device AI Unavailable',
+              message: res.statusMessage,
+              retryable: false,
+            }
+          )
+        }
         setIsCheckingReadiness(false)
       }
     }
@@ -52,7 +79,7 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [isInitiallyUnsupported])
 
   const handleStartAnalysis = async () => {
     setErrorState(null)
@@ -278,37 +305,54 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
       </div>
 
       {/* Action Footer */}
-      <div className="mt-6 pt-4 border-t border-[var(--border-card)] flex items-center justify-between gap-3">
+      <div className="mt-6 pt-4 border-t border-[var(--border-card)] flex flex-wrap items-center justify-between gap-3">
         <span className="text-[11px] text-[var(--text-muted)]">
           {analysis
             ? analysis.modelName === 'Local Rule-Based Analysis'
               ? 'Analyzed locally (No ML/AI)'
               : 'Completed locally via Chrome Prompt API'
+            : readiness?.status === 'unsupported'
+            ? 'Prompt API unavailable • Local engine ready'
             : 'No data leaves your device'}
         </span>
 
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          disabled={isAnalyzing || isCheckingReadiness}
-          onClick={handleStartAnalysis}
-          icon={
-            isAnalyzing ? (
-              <Sparkles className="w-4 h-4 animate-spin" />
-            ) : analysis ? (
-              <RotateCcw className="w-4 h-4" />
-            ) : (
-              <Shield className="w-4 h-4" />
-            )
-          }
-        >
-          {isAnalyzing
-            ? 'Analyzing On-Device...'
-            : analysis
-            ? 'Re-analyze On-Device'
-            : 'Run On-Device Analysis'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {readiness?.status === 'unsupported' && !analysis && (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={isAnalyzing || !protectedMessage.trim()}
+              onClick={handleRunLocalRuleBased}
+              icon={isAnalyzing ? <Sparkles className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+            >
+              {isAnalyzing ? 'Analyzing Locally...' : 'Run Local Rule-Based Analysis'}
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            variant={readiness?.status === 'unsupported' && !analysis ? 'outline' : 'primary'}
+            size="sm"
+            disabled={isAnalyzing || isCheckingReadiness}
+            onClick={handleStartAnalysis}
+            icon={
+              isAnalyzing ? (
+                <Sparkles className="w-4 h-4 animate-spin" />
+              ) : analysis ? (
+                <RotateCcw className="w-4 h-4" />
+              ) : (
+                <Shield className="w-4 h-4" />
+              )
+            }
+          >
+            {isAnalyzing
+              ? 'Analyzing On-Device...'
+              : analysis
+              ? 'Re-analyze On-Device'
+              : 'Run On-Device Analysis'}
+          </Button>
+        </div>
       </div>
     </Card>
   )

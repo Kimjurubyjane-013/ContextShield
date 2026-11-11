@@ -10,31 +10,46 @@ import {
   type AttemptTelemetry,
   type CloudConsentState,
   type LatencyBreakdown,
-} from '@/features/analysis/types'
+} from '../features/analysis/types.ts'
 import {
   SYSTEM_ANALYSIS_INSTRUCTION,
   buildUserAnalysisContent,
   parseAndValidateAiResponse,
-} from './aiPromptUtils'
+} from './aiPromptUtils.ts'
 import {
   createAnalysisError,
   isTransientError,
   normalizeAnalysisError,
   toAnalysisErrorState,
-} from './errorUtils'
-import { getFirebaseAppInstance, getFirebaseConfigStatus } from './firebaseConfig'
+} from './errorUtils.ts'
+import { getFirebaseAppInstance, getFirebaseConfigStatus } from './firebaseConfig.ts'
 
 // Concurrency guard: track currently in-flight requests to prevent duplicate parallel executions
 const inFlightCloudRequests = new Set<string>()
+
+// Active abort controller for in-flight cloud request
+let activeAbortController: AbortController | null = null
+
+/**
+ * Aborts any currently active cloud analysis request and releases concurrency locks.
+ */
+export function abortCloudAiAnalysis(): void {
+  if (activeAbortController) {
+    try {
+      activeAbortController.abort()
+    } catch {}
+    activeAbortController = null
+  }
+  inFlightCloudRequests.clear()
+}
 
 // Singleton model cache to avoid repeated Firebase AI & SDK instantiation
 let cachedCloudModel: any = null
 let cachedFirebaseApp: any = null
 
-// SDK single-request timeout in milliseconds (90 seconds).
-// Gemini 3.8 Flash inference under load takes 75-85s. Setting 90s bounds execution
-// and aborts hanging connections before the 180s SDK default without clipping valid responses.
-const CLOUD_REQUEST_TIMEOUT_MS = 90000
+// SDK single-request timeout in milliseconds (35 seconds).
+// Bounds cloud inference to prevent hanging for minutes while allowing reasonable time for response.
+const CLOUD_REQUEST_TIMEOUT_MS = 35000
 
 /**
  * Returns a cached, compiled GenerativeModel singleton instance for ONLY_IN_CLOUD Gemini 3.8 Flash inference.
@@ -139,6 +154,7 @@ export async function runCloudAiAnalysis(
   inFlightCloudRequests.add(trimmed)
   const startTime = performance.now()
   const userContent = buildUserAnalysisContent(trimmed)
+  let controller: AbortController | null = null
 
   try {
     // 1. Measure Firebase Request Initialization latency (near 0ms when cached)
@@ -156,9 +172,12 @@ export async function runCloudAiAnalysis(
     let result: any = null
     const attemptTelemetry: AttemptTelemetry[] = []
 
+    controller = new AbortController()
+    activeAbortController = controller
+
     while (attempt <= MAX_RETRIES) {
       // Re-verify consent and snapshot integrity before each attempt
-      if (!consentState.hasConsented) {
+      if (!consentState.hasConsented || controller.signal.aborted) {
         throw createAnalysisError(
           'CONSENT_REQUIRED',
           'Consent Required',
@@ -183,7 +202,10 @@ export async function runCloudAiAnalysis(
       let backoffDurationMs = 0
 
       try {
-        result = await model.generateContent(userContent, { timeout: CLOUD_REQUEST_TIMEOUT_MS })
+        result = await model.generateContent(userContent, {
+          timeout: CLOUD_REQUEST_TIMEOUT_MS,
+          signal: controller.signal,
+        })
         const durationMs = Math.round(performance.now() - tGenStart)
         totalGenerationTime += durationMs
 
@@ -206,17 +228,26 @@ export async function runCloudAiAnalysis(
         attemptErrorClassification = normalized.suggestedErrorCode
         attemptStatus = normalized.suggestedErrorCode === 'TIMEOUT' ? 'TIMEOUT' : 'ERROR'
 
-        // Check if transient error and bounded retries are available (Daily Quota, Token Quota, and Billing are non-transient)
-        if (attempt < MAX_RETRIES && isTransientError(err)) {
+        // Check if transient error and bounded retries are available.
+        // Fast-fail: only retry if the first attempt was short (< 12s) and not aborted.
+        // If the attempt timed out (spent 35s), do NOT retry automatically.
+        const shouldRetry =
+          attempt < MAX_RETRIES &&
+          isTransientError(err) &&
+          durationMs < 12000 &&
+          totalGenerationTime < 24000 &&
+          !controller.signal.aborted
+
+        if (shouldRetry) {
           attempt++
           retryAttempts++
 
           const serverDelaySec = normalized.quotaDetails?.retryDelaySeconds
-          if (serverDelaySec !== undefined && serverDelaySec > 0 && serverDelaySec <= 30) {
+          if (serverDelaySec !== undefined && serverDelaySec > 0 && serverDelaySec <= 15) {
             backoffDurationMs = Math.round(serverDelaySec * 1000)
           } else {
-            const baseDelay = 1500 * attempt
-            const jitter = Math.random() * 500
+            const baseDelay = 1200 * attempt
+            const jitter = Math.random() * 400
             backoffDurationMs = Math.round(baseDelay + jitter)
           }
 
@@ -302,6 +333,9 @@ export async function runCloudAiAnalysis(
   } catch (err) {
     throw toAnalysisErrorState(err, 'Cloud Analysis Failed', 'Failed to complete cloud analysis.')
   } finally {
+    if (activeAbortController === controller) {
+      activeAbortController = null
+    }
     inFlightCloudRequests.delete(trimmed)
   }
 }
