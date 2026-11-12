@@ -25,7 +25,7 @@ export function runHybridSynthesisTests() {
   const dummyCloudResult: AnalysisRecord = {
     id: 'cloud-test-1',
     mode: 'cloud',
-    modelName: 'Gemini 3.8 Flash (Firebase AI Logic Cloud)',
+    modelName: 'Gemini 3.5 Flash-Lite (Firebase AI Logic Cloud)',
     summary: 'The message is a phishing attempt warning of account suspension to steal credentials via an unknown link.',
     riskLevel: 'HIGH',
     suspiciousIndicators: [

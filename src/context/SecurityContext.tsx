@@ -97,7 +97,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const status = mapRiskToScanStatus(record.riskLevel)
     const methodLabel: ScanResult['analysisMethod'] =
       record.actualInferenceSource === 'in_cloud'
-        ? 'Cloud AI (Gemini 3.8 Flash)'
+        ? 'Cloud AI (Gemini 3.5 Flash-Lite)'
         : record.actualInferenceSource === 'on_device'
         ? 'On-Device AI (Gemini Nano)'
         : 'Local Rule-Based Analysis'

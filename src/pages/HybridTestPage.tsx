@@ -326,7 +326,7 @@ export const HybridTestPage: React.FC = () => {
 
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
               Enforces <code className="font-mono text-[var(--text-heading)]">InferenceMode.PREFER_ON_DEVICE</code> under explicit consent.
-              Attempts local on-device inference first, automatically falling back to Gemini 3.8 Flash if local model is unavailable.
+              Attempts local on-device inference first, automatically falling back to Gemini 3.5 Flash-Lite if local model is unavailable.
             </p>
 
             {/* Mandatory Unchecked Consent Checkbox */}

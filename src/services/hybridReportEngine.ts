@@ -88,7 +88,7 @@ export function generateUnifiedReport({
   const cloudSummary = buildModelSummary(
     'cloud',
     effectiveCloudStatus,
-    'Gemini 3.8 Flash (Firebase AI Logic Cloud)',
+    'Gemini 3.5 Flash-Lite (Firebase AI Logic Cloud)',
     cloudResult,
     cloudError
   )

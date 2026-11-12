@@ -119,7 +119,7 @@ async function getCachedHybridModel(mode: HybridInferenceMode): Promise<any> {
 
   if (mode === 'PREFER_ON_DEVICE') {
     modelConfig.inCloudParams = {
-      model: 'gemini-3.8-flash',
+      model: 'gemini-3.5-flash-lite',
       systemInstruction: SYSTEM_ANALYSIS_INSTRUCTION,
       generationConfig: {
         maxOutputTokens: 768,
@@ -468,7 +468,7 @@ export async function runHybridAiAnalysis({
     const modelName =
       actualInferenceSource === 'on_device'
         ? 'Gemini Nano (Firebase AI Logic On-Device)'
-        : 'Gemini 3.8 Flash (Firebase AI Logic Cloud)'
+        : 'Gemini 3.5 Flash-Lite (Firebase AI Logic Cloud)'
 
     const latencyBreakdown: LatencyBreakdown = {
       initMs,

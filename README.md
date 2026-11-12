@@ -19,7 +19,7 @@ ContextShield enforces strict separation across three independent analysis engin
 - **Strict Engine & Attribution Separation**:
   - **Local Rule-Based Engine (`src/services/localSecurityEngine.ts`, attribution `local_rules`)**: Deterministic offline heuristics with `0` network calls; functions cleanly regardless of cloud consent, quota limits, or browser Prompt API support.
   - **On-Device AI (`src/services/onDeviceAi.ts`, attribution `on_device`)**: Chrome Prompt API (`window.LanguageModel` / `window.ai.languageModel`) via `InferenceMode.ONLY_ON_DEVICE`. Unsupported browsers immediately surface `ON_DEVICE_UNAVAILABLE` with zero silent cloud fallback.
-  - **Cloud AI (`src/services/cloudAi.ts`, attribution `in_cloud`)**: `gemini-3.8-flash` via Firebase AI Logic using `InferenceMode.ONLY_IN_CLOUD` and `CLOUD_REQUEST_TIMEOUT_MS = 60000` (`60s`).
+  - **Cloud AI (`src/services/cloudAi.ts`, attribution `in_cloud`)**: `gemini-3.5-flash-lite` via Firebase AI Logic using `InferenceMode.ONLY_IN_CLOUD` and `CLOUD_REQUEST_TIMEOUT_MS = 60000` (`60s`).
 - **Transparent Unified Reporting (`src/services/hybridReportEngine.ts`, `src/features/analysis/analysisUtils.ts`)**: Prevents deterministic `local_rules` from masquerading as `on_device` Gemini Nano AI or generating fabricated hybrid AI corroboration.
 
 ---
@@ -83,5 +83,5 @@ Execution reliability across all three analysis engines (`src/services/onDeviceA
 ### Known Limitations & Pending Live Verification
 
 - **Real Gemini Nano (`on_device`) Hardware Untested**: Test environments lacked compatible Chrome Prompt API / Gemini Nano hardware, so only the `ON_DEVICE_UNAVAILABLE` fallback path was verified locally and in prior hosting checks.
-- **Live Cloud Inference on Current Build Pending**: Live `gemini-3.8-flash` inference, automatic `60s` (`CLOUD_REQUEST_TIMEOUT_MS`) timeout handling, and live HTTP 429/503 responses have not yet been executed against the current working-tree build once deployed.
+- **Live Cloud Inference on Current Build Pending**: Live `gemini-3.5-flash-lite` inference, automatic `60s` (`CLOUD_REQUEST_TIMEOUT_MS`) timeout handling, and live HTTP 429/503 responses have not yet been executed against the current deployed frontend build.
 - **Static Rules & Mocked Quota Tests**: Local rule-based detection relies on deterministic patterns and offline domain lists (not semantic AI), and prior HTTP 429 browser quota tests used controlled mocked responses rather than exhausting real project quotas.

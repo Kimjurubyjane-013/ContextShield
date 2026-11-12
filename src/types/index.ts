@@ -24,7 +24,7 @@ export interface ScanResult {
   analysisMethod:
     | 'Local Rule-Based Analysis'
     | 'On-Device AI (Gemini Nano)'
-    | 'Cloud AI (Gemini 3.8 Flash)'
+    | 'Cloud AI (Gemini 3.5 Flash-Lite)'
     | 'On-Device Heuristic'
     | 'Simulated Hybrid Engine'
   actualInferenceSource?: 'local_rules' | 'on_device' | 'in_cloud'

@@ -58,7 +58,7 @@ let cachedCloudModel: any = null
 let cachedFirebaseApp: any = null
 
 // Unified SDK & client safety timeout in milliseconds (60 seconds).
-// Reconciled across cloudAi.ts and hybridAiService.ts: allows slow Gemini 3.8 Flash responses
+// Reconciled across cloudAi.ts and hybridAiService.ts: allows Gemini 3.5 Flash-Lite responses
 // while guaranteeing requests cannot hang for 180s+ (SDK default).
 export const CLOUD_REQUEST_TIMEOUT_MS = 60000
 
@@ -131,7 +131,7 @@ export function sleepWithAbort(ms: number, signal: AbortSignal): Promise<void> {
 }
 
 /**
- * Returns a cached, compiled GenerativeModel singleton instance for ONLY_IN_CLOUD Gemini 3.8 Flash inference.
+ * Returns a cached, compiled GenerativeModel singleton instance for ONLY_IN_CLOUD Gemini 3.5 Flash-Lite inference.
  * Reusing this instance saves initialization latency on every request and retry.
  */
 async function getCachedCloudModel(): Promise<any> {
@@ -151,7 +151,7 @@ async function getCachedCloudModel(): Promise<any> {
     {
       mode: InferenceMode.ONLY_IN_CLOUD,
       inCloudParams: {
-        model: 'gemini-3.8-flash',
+        model: 'gemini-3.5-flash-lite',
         systemInstruction: SYSTEM_ANALYSIS_INSTRUCTION,
         generationConfig: {
           maxOutputTokens: 768, // Bounded token budget preventing runaway reasoning loops
@@ -448,7 +448,7 @@ export async function runCloudAiAnalysis(
       ...structured,
       id: `cloud-${Date.now()}`,
       mode: 'cloud',
-      modelName: 'Gemini 3.8 Flash (Firebase AI Logic Cloud)',
+      modelName: 'Gemini 3.5 Flash-Lite (Firebase AI Logic Cloud)',
       actualInferenceSource,
       cloudConsentGranted: true,
       analyzedAt: new Date().toISOString(),

@@ -421,7 +421,7 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
 
               <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[11px] text-[var(--text-muted)]">
-                  Need contextual Cloud AI (Gemini 3.8 Flash) or granular PII toggles?
+                  Need contextual Cloud AI (Gemini 3.5 Flash-Lite) or granular PII toggles?
                 </span>
                 <button
                   type="button"

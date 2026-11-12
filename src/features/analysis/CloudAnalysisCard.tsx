@@ -195,7 +195,7 @@ export const CloudAnalysisCard: React.FC<CloudAnalysisCardProps> = ({
               </p>
               <div className="flex flex-wrap items-center gap-2 pt-0.5">
                 <StatusBadge variant="ai" size="sm" dot pulse={isAnalyzing}>
-                  Gemini 3.8 Flash
+                  Gemini 3.5 Flash-Lite
                 </StatusBadge>
                 <StatusBadge
                   variant={isConsentValid ? 'safe' : 'warning'}
@@ -253,7 +253,7 @@ export const CloudAnalysisCard: React.FC<CloudAnalysisCardProps> = ({
             <div className="flex items-center justify-between gap-2 font-semibold text-[var(--text-heading)]">
               <span className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#22D3EE] animate-spin" />
-                Communicating with Gemini 3.8 Flash...
+                Communicating with Gemini 3.5 Flash-Lite...
               </span>
               <span className="font-mono text-[#22D3EE]">
                 {elapsedSeconds}s / {TIMEOUT_SECONDS}s

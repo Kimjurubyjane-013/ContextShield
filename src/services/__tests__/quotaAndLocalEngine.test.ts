@@ -316,7 +316,7 @@ export function runQuotaAndLocalEngineTests() {
     ...localPhishResult,
     id: 'cloud-test-sample',
     mode: 'cloud',
-    modelName: 'Gemini 3.8 Flash (Firebase AI Logic Cloud)',
+    modelName: 'Gemini 3.5 Flash-Lite (Firebase AI Logic Cloud)',
     actualInferenceSource: 'in_cloud',
   }
   const multiReport = generateUnifiedReport({
