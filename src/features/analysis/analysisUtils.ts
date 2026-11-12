@@ -14,40 +14,49 @@ export function compareAnalyses(
   onDevice: AnalysisRecord | null,
   cloud: AnalysisRecord | null
 ): HybridComparison | null {
-  if (!onDevice && !cloud) return null
+  const validOnDevice =
+    onDevice &&
+    (onDevice.actualInferenceSource === 'on_device' ||
+      onDevice.actualInferenceSource === 'local_rules')
+      ? onDevice
+      : null
+  const validCloud =
+    cloud && cloud.actualInferenceSource === 'in_cloud' ? cloud : null
 
-  if (!onDevice && cloud) {
+  if (!validOnDevice && !validCloud) return null
+
+  if (!validOnDevice && validCloud) {
     return {
       riskAlignment: 'SINGLE_MODEL',
       alignmentNote:
         'Cloud-Only Evaluation: On-Device AI was unavailable or not executed. Findings reflect deep contextual cloud inference without local corroboration.',
       commonIndicators: [],
       uniqueOnDeviceFindings: [],
-      uniqueCloudFindings: cloud.suspiciousIndicators,
-      combinedRecommendations: cloud.recommendedActions,
+      uniqueCloudFindings: validCloud.suspiciousIndicators,
+      combinedRecommendations: validCloud.recommendedActions,
     }
   }
 
-  if (onDevice && !cloud) {
-    const isLocalRules = onDevice.actualInferenceSource === 'local_rules'
+  if (validOnDevice && !validCloud) {
+    const isLocalRules = validOnDevice.actualInferenceSource === 'local_rules'
     return {
       riskAlignment: 'SINGLE_MODEL',
       alignmentNote: isLocalRules
         ? 'Local Rule-Based Evaluation: Enhanced Cloud AI was not executed. Findings reflect client-side deterministic heuristics (Zero ML/AI).'
         : 'On-Device-Only Evaluation: Enhanced Cloud AI was not executed or lacked explicit consent. Findings reflect local Gemini Nano inference without cloud corroboration.',
       commonIndicators: [],
-      uniqueOnDeviceFindings: onDevice.suspiciousIndicators,
+      uniqueOnDeviceFindings: validOnDevice.suspiciousIndicators,
       uniqueCloudFindings: [],
-      combinedRecommendations: onDevice.recommendedActions,
+      combinedRecommendations: validOnDevice.recommendedActions,
     }
   }
 
-  if (!onDevice || !cloud) return null
+  if (!validOnDevice || !validCloud) return null
 
   // Determine risk level agreement
-  const onDeviceRisk = onDevice.riskLevel
-  const cloudRisk = cloud.riskLevel
-  const isLocalRules = onDevice.actualInferenceSource === 'local_rules'
+  const onDeviceRisk = validOnDevice.riskLevel
+  const cloudRisk = validCloud.riskLevel
+  const isLocalRules = validOnDevice.actualInferenceSource === 'local_rules'
 
   let riskAlignment: 'AGREE' | 'DIVERGE' = 'DIVERGE'
   let alignmentNote = ''
@@ -83,8 +92,8 @@ export function compareAnalyses(
   const uniqueOnDeviceFindings: string[] = []
   const uniqueCloudFindings: string[] = []
 
-  const cloudText = cloud.suspiciousIndicators.join(' ').toLowerCase()
-  onDevice.suspiciousIndicators.forEach(ind => {
+  const cloudText = validCloud.suspiciousIndicators.join(' ').toLowerCase()
+  validOnDevice.suspiciousIndicators.forEach(ind => {
     const words = ind.toLowerCase().split(/\s+/).filter(w => w.length > 4)
     const hasOverlap = words.some(w => cloudText.includes(w))
     if (hasOverlap) {
@@ -94,8 +103,8 @@ export function compareAnalyses(
     }
   })
 
-  const onDeviceText = onDevice.suspiciousIndicators.join(' ').toLowerCase()
-  cloud.suspiciousIndicators.forEach(ind => {
+  const onDeviceText = validOnDevice.suspiciousIndicators.join(' ').toLowerCase()
+  validCloud.suspiciousIndicators.forEach(ind => {
     const words = ind.toLowerCase().split(/\s+/).filter(w => w.length > 4)
     const hasOverlap = words.some(w => onDeviceText.includes(w))
     if (!hasOverlap) {
@@ -104,7 +113,7 @@ export function compareAnalyses(
   })
 
   // Deduplicate recommendations
-  const allRecs = [...cloud.recommendedActions, ...onDevice.recommendedActions]
+  const allRecs = [...validCloud.recommendedActions, ...validOnDevice.recommendedActions]
   const combinedRecommendations = Array.from(new Set(allRecs))
 
   return {
@@ -158,5 +167,46 @@ export function getRiskLevelBadgeProps(risk: AnalysisRiskLevel): {
         textClass: 'text-[var(--text-muted)]',
         borderClass: 'border-[var(--border-card)]',
       }
+  }
+}
+
+export interface CorroborationPresentation {
+  hasValidCorroborationPair: boolean
+  heading: string
+  subtitle: string
+}
+
+/**
+ * Determines whether two executed engines form a valid corroboration pair
+ * (`on_device` + `in_cloud` or `local_rules` + `in_cloud`).
+ */
+export function getCorroborationPresentation(
+  onDevice: AnalysisRecord | null,
+  cloud: AnalysisRecord | null
+): CorroborationPresentation {
+  const isActualOnDevice = onDevice?.actualInferenceSource === 'on_device'
+  const isLocalRules = onDevice?.actualInferenceSource === 'local_rules'
+  const isActualCloud = cloud?.actualInferenceSource === 'in_cloud'
+
+  if (isActualOnDevice && isActualCloud) {
+    return {
+      hasValidCorroborationPair: true,
+      heading: 'Corroborated Indicators',
+      subtitle: 'Corroborated by both On-Device Gemini Nano and Cloud AI security evaluation:',
+    }
+  }
+
+  if (isLocalRules && isActualCloud) {
+    return {
+      hasValidCorroborationPair: true,
+      heading: 'Corroborated Indicators',
+      subtitle: 'Corroborated by Cloud AI and deterministic Local Rules:',
+    }
+  }
+
+  return {
+    hasValidCorroborationPair: false,
+    heading: 'Non-Corroborated Findings',
+    subtitle: 'No cross-engine corroboration available (single-engine evaluation only).',
   }
 }

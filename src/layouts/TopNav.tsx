@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Bell, Menu, Search, ShieldCheck, X } from 'lucide-react'
+import { ContextShieldLogo } from '@/components/common/ContextShieldLogo'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { useNavigation } from '@/context/NavigationContext'
 import { useSecurity } from '@/context/SecurityContext'
@@ -41,6 +42,15 @@ export const TopNav: React.FC = () => {
           aria-label="Open sidebar menu"
         >
           <Menu className="w-5 h-5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentPage('dashboard')}
+          className="lg:hidden shrink-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60 rounded-lg"
+          aria-label="ContextShield Dashboard"
+        >
+          <ContextShieldLogo size="sm" />
         </button>
 
         {/* Search Bar */}

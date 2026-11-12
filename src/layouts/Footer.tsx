@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { ContextShieldLogo } from '@/components/common/ContextShieldLogo'
 import { Modal } from '@/components/common/Modal'
 
 export const Footer: React.FC = () => {
@@ -10,7 +11,10 @@ export const Footer: React.FC = () => {
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Left: Branding & Disclaimer */}
         <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
-          <span className="font-bold text-[#0D5663] dark:text-[#22D3EE]">ContextShield</span>
+          <div className="inline-flex items-center gap-2">
+            <ContextShieldLogo size="sm" />
+            <span className="font-bold text-[#0D5663] dark:text-[#22D3EE]">ContextShield</span>
+          </div>
           <span className="hidden sm:inline opacity-40">&bull;</span>
           <span>Privacy-First Hybrid AI Security Console</span>
         </div>

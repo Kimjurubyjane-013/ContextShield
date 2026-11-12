@@ -50,16 +50,18 @@ export function generateUnifiedReport({
   const trimmed = protectedMessage.trim()
   const snippet = trimmed.length > 120 ? `${trimmed.slice(0, 117)}...` : trimmed
 
-  // 1. Determine model run statuses
-  const effectiveOnDeviceStatus: ModelStatus =
-    onDeviceStatus ?? (onDeviceResult ? 'completed' : onDeviceError ? 'failed' : 'unavailable')
-  const effectiveCloudStatus: ModelStatus =
-    cloudStatus ?? (cloudResult ? 'completed' : cloudError ? 'failed' : 'unavailable')
-
-  // 2. Distinguish actual Gemini Nano AI from deterministic Local Rules
+  // 1. Distinguish actual Gemini Nano AI from deterministic Local Rules
+  // Exclude any onDeviceResult without an explicit 'local_rules' or 'on_device' attribution
   const isLocalRules = onDeviceResult?.actualInferenceSource === 'local_rules'
   const isOnDeviceAi = onDeviceResult?.actualInferenceSource === 'on_device'
+  const effectiveOnDeviceResult = isLocalRules || isOnDeviceAi ? onDeviceResult : null
   const isCloudCompleted = Boolean(cloudResult)
+
+  // 2. Determine model run statuses
+  const effectiveOnDeviceStatus: ModelStatus =
+    onDeviceStatus ?? (effectiveOnDeviceResult ? 'completed' : onDeviceError ? 'failed' : 'unavailable')
+  const effectiveCloudStatus: ModelStatus =
+    cloudStatus ?? (cloudResult ? 'completed' : cloudError ? 'failed' : 'unavailable')
 
   let completionStatus: UnifiedReport['completionStatus'] = 'none_completed'
   if (isOnDeviceAi && isCloudCompleted) {
@@ -70,7 +72,7 @@ export function generateUnifiedReport({
     completionStatus = 'on_device_only'
   } else if (isLocalRules && !isCloudCompleted) {
     completionStatus = 'local_only'
-  } else if (!onDeviceResult && isCloudCompleted) {
+  } else if (!effectiveOnDeviceResult && isCloudCompleted) {
     completionStatus = 'cloud_only'
   } else {
     completionStatus = 'none_completed'
@@ -81,7 +83,7 @@ export function generateUnifiedReport({
     isLocalRules ? 'local' : 'on-device',
     effectiveOnDeviceStatus,
     isLocalRules ? 'Local Rule-Based Analysis' : 'Gemini Nano (Chrome Prompt API On-Device)',
-    onDeviceResult,
+    effectiveOnDeviceResult,
     onDeviceError
   )
 
@@ -95,11 +97,11 @@ export function generateUnifiedReport({
 
   // 4. Compare findings and correlate indicators
   const { commonFindings, additionalFindings, conflictingFindings, allEvidence } =
-    reconcileFindings(onDeviceResult, cloudResult, trimmed)
+    reconcileFindings(effectiveOnDeviceResult, cloudResult, trimmed)
 
   // 5. Compute overall risk assessment
   const assessment = computeOverallRiskAssessment({
-    onDeviceResult,
+    onDeviceResult: effectiveOnDeviceResult,
     cloudResult,
     completionStatus,
     conflictingFindings,
@@ -108,14 +110,14 @@ export function generateUnifiedReport({
 
   // 6. Generate contextual recommendations
   const recommendedActions = synthesizeRecommendations(
-    onDeviceResult,
+    effectiveOnDeviceResult,
     cloudResult,
     commonFindings,
     additionalFindings
   )
 
   // 7. Consolidate honest limitations
-  const limitations = consolidateLimitations(onDeviceResult, cloudResult, completionStatus)
+  const limitations = consolidateLimitations(effectiveOnDeviceResult, cloudResult, completionStatus)
 
   return {
     id: `rep-${Date.now()}`,
@@ -270,21 +272,24 @@ function reconcileFindings(
       (odRisk === 'HIGH' && cRisk === 'LOW') || (odRisk === 'LOW' && cRisk === 'HIGH')
 
     if (isDirectRiskContradiction) {
+      const isLocalRules = onDevice.actualInferenceSource === 'local_rules'
+      const localEngineName = isLocalRules ? 'Local Rules' : 'On-Device AI'
       conflictingFindings.push({
         id: 'conflict-risk-divergence',
         title: 'Severe Risk Level Divergence',
-        description: `On-Device AI evaluated this message as ${odRisk} risk, whereas Cloud AI evaluated it as ${cRisk} risk.`,
+        description: `${localEngineName} evaluated this message as ${odRisk} risk, whereas Cloud AI evaluated it as ${cRisk} risk.`,
         source: 'both',
         severity: 'high',
         isConflicting: true,
-        conflictReason:
-          'Models produced opposing security classifications. On-Device AI relied on local surface patterns while Cloud AI analyzed deeper contextual nuance. Manual verification is strongly advised.',
+        conflictReason: isLocalRules
+          ? 'Engines produced opposing security classifications. Deterministic Local Rules relied on surface pattern heuristics while Cloud AI analyzed deeper contextual nuance. Manual verification is strongly advised.'
+          : 'Models produced opposing security classifications. On-Device AI relied on local surface patterns while Cloud AI analyzed deeper contextual nuance. Manual verification is strongly advised.',
         evidenceList: [
           {
             id: 'ev-conflict-od',
-            indicator: `On-Device Assessment: ${odRisk}`,
+            indicator: `${localEngineName} Assessment: ${odRisk}`,
             explanation: onDevice.summary,
-            source: 'on-device',
+            source: isLocalRules ? 'local_rules' : 'on-device',
             severity: odRisk === 'HIGH' ? 'high' : 'low',
           },
           {
@@ -875,8 +880,9 @@ export function formatReportAsText(report: UnifiedReport): string {
   }
 
   lines.push('--------------------------------------------------------')
-  lines.push('AI SOURCE ATTRIBUTION:')
-  lines.push(`- On-Device AI: [${report.onDeviceSummary.status.toUpperCase()}] ${report.onDeviceSummary.modelName}`)
+  lines.push('ENGINE & AI SOURCE ATTRIBUTION:')
+  const localLabel = report.onDeviceSummary.mode === 'local' ? 'Local Rules' : 'On-Device AI'
+  lines.push(`- ${localLabel}: [${report.onDeviceSummary.status.toUpperCase()}] ${report.onDeviceSummary.modelName}`)
   if (report.onDeviceSummary.riskLevel) {
     lines.push(`  Risk Finding: ${report.onDeviceSummary.riskLevel}`)
   }
@@ -887,7 +893,11 @@ export function formatReportAsText(report: UnifiedReport): string {
 
   if (report.commonFindings.length > 0) {
     lines.push('--------------------------------------------------------')
-    lines.push(`COMMON FINDINGS (CORROBORATED BY BOTH ENGINES) [${report.commonFindings.length}]:`)
+    const corroboratedBy =
+      report.completionStatus === 'cloud_and_local'
+        ? 'CORROBORATED BY CLOUD AI & LOCAL RULES'
+        : 'CORROBORATED BY BOTH AI MODELS'
+    lines.push(`COMMON FINDINGS (${corroboratedBy}) [${report.commonFindings.length}]:`)
     report.commonFindings.forEach((f, idx) => {
       lines.push(`  ${idx + 1}. [${f.severity.toUpperCase()}] ${f.title}`)
       lines.push(`     ${f.description}`)

@@ -6,10 +6,10 @@ import {
   Lock,
   MessageSquareWarning,
   Settings,
-  Shield,
   ShieldCheck,
   Sparkles,
 } from 'lucide-react'
+import { ContextShieldLogo } from '@/components/common/ContextShieldLogo'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { useNavigation } from '@/context/NavigationContext'
 import type { PageId } from '@/types'
@@ -46,20 +46,12 @@ export const Sidebar: React.FC<{ onCloseMobile?: () => void }> = ({ onCloseMobil
           onClick={() => handleNavClick('dashboard')}
           className="w-full text-left flex items-center gap-3 px-2 py-2 mb-6 rounded-xl cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60"
         >
-          <div className="relative p-2.5 rounded-xl bg-[#0B2735] border border-[#22D3EE]/40 text-[#22D3EE] shadow-[0_0_18px_rgba(34,211,238,0.14)] transition-transform group-hover:scale-105">
-            <Shield className="w-6 h-6 fill-[#0D5663]/50" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#22C55E] ring-2 ring-[#05121E]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-lg tracking-tight text-[#EAF4F8]">
-                Context<span className="text-[#22D3EE]">Shield</span>
-              </span>
-            </div>
-            <p className="text-[10px] text-[#8EB2C2] font-semibold leading-tight tracking-wider uppercase">
-              Defense Center
-            </p>
-          </div>
+          <ContextShieldLogo
+            size="md"
+            showWordmark
+            subtitle="Defense Center"
+            className="transition-transform group-hover:translate-x-0.5"
+          />
         </button>
 
         {/* Navigation Section */}
@@ -74,7 +66,7 @@ export const Sidebar: React.FC<{ onCloseMobile?: () => void }> = ({ onCloseMobil
                 aria-current={isActive ? 'page' : undefined}
                 className={`w-full min-h-[42px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60 ${
                   isActive
-                    ? 'bg-[#0D5663] text-[#EAF4F8] border border-[#22D3EE]/45 shadow-[0_4px_14px_rgba(13,86,99,0.45)] font-semibold'
+                    ? 'bg-[#0D5663] text-[#EAF4F8] border border-[#22D3EE]/45 font-semibold'
                     : 'text-[#8EB2C2] hover:text-[#EAF4F8] hover:bg-[#0B2735] border border-transparent'
                 }`}
               >
@@ -87,7 +79,7 @@ export const Sidebar: React.FC<{ onCloseMobile?: () => void }> = ({ onCloseMobil
                   <span>{label}</span>
                 </div>
                 {isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE]" />
                 )}
               </button>
             )

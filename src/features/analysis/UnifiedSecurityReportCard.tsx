@@ -435,16 +435,25 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
       </div>
 
       {/* 4. CORROBORATED COMMON FINDINGS */}
-      {report.commonFindings.length > 0 && (
+      {(report.completionStatus === 'both_completed' ||
+        report.completionStatus === 'cloud_and_local') &&
+        report.commonFindings.length > 0 && (
         <Card className="p-6 border border-[#22C55E]/30 bg-[#22C55E]/5 space-y-4">
           <div className="flex flex-wrap items-center gap-2.5 pb-3 border-b border-[var(--border-card)]">
             <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
             <h3 className="text-base font-bold text-[var(--text-heading)]">
               Corroborated Common Findings ({report.commonFindings.length})
             </h3>
-            <StatusBadge variant="safe" size="sm">
-              Both AI Models Agree
-            </StatusBadge>
+            {report.completionStatus === 'both_completed' && (
+              <StatusBadge variant="safe" size="sm">
+                Both AI Models Agree
+              </StatusBadge>
+            )}
+            {report.completionStatus === 'cloud_and_local' && (
+              <StatusBadge variant="ai" size="sm">
+                Cloud AI + Local Rules Agree
+              </StatusBadge>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -646,7 +655,7 @@ export const UnifiedSecurityReportCard: React.FC<UnifiedSecurityReportCardProps>
             </div>
 
             <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
-              Are you sure you want to clear this report? All on-device and cloud findings for this message will be discarded from session memory.
+              Are you sure you want to clear this report? All local, on-device, and cloud findings for this message will be discarded from session memory.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-card)]">

@@ -42,18 +42,7 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
   )
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null)
-  const [errorState, setErrorState] = useState<AnalysisErrorState | null>(
-    isInitiallyUnsupported
-      ? {
-          code: 'ON_DEVICE_UNAVAILABLE',
-          title: 'On-Device AI Unavailable (ON_DEVICE_UNAVAILABLE)',
-          message:
-            initialReadiness?.statusMessage ||
-            'Browser does not support Chrome Prompt API (Gemini Nano). Use Deterministic Local Rules below or review consent for Cloud AI.',
-          retryable: false,
-        }
-      : null
-  )
+  const [errorState, setErrorState] = useState<AnalysisErrorState | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -65,16 +54,6 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
       const res = await checkOnDeviceReadiness()
       if (isMounted) {
         setReadiness(res)
-        if (res.status === 'unsupported' || res.status === 'no') {
-          setErrorState(prev =>
-            prev || {
-              code: 'ON_DEVICE_UNAVAILABLE',
-              title: 'On-Device AI Unavailable (ON_DEVICE_UNAVAILABLE)',
-              message: res.statusMessage,
-              retryable: false,
-            }
-          )
-        }
         setIsCheckingReadiness(false)
       }
     }
@@ -96,7 +75,7 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
       onAnalysisComplete(result)
     } catch (err) {
       setErrorState(
-        toAnalysisErrorState(err, 'On-Device AI Unavailable', 'Failed to complete on-device analysis.')
+        toAnalysisErrorState(err, 'On-device analysis unavailable', 'Failed to complete on-device analysis.')
       )
     } finally {
       setIsAnalyzing(false)
@@ -153,7 +132,7 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
                     variant={readiness?.status === 'readily' ? 'ai' : 'neutral'}
                     size="sm"
                   >
-                    {readiness?.status === 'readily' ? 'Gemini Nano Ready' : 'Nano Unavailable'}
+                    {readiness?.status === 'readily' ? 'Gemini Nano Ready' : 'On-device analysis unavailable'}
                   </StatusBadge>
                 )}
               </div>
@@ -174,13 +153,20 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
             <span className="leading-snug">
               {isCheckingReadiness
                 ? 'Inspecting on-device Gemini Nano Prompt API readiness...'
-                : readiness?.statusMessage || 'Local security inspection ready.'}
+                : readiness?.status === 'readily' || readiness?.status === 'after-download'
+                ? readiness.statusMessage
+                : 'On-device analysis unavailable. Local Rule-Based Analysis runs offline with zero network requests.'}
             </span>
           </div>
-          {readiness?.status === 'unsupported' && (
-            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed pl-6">
-              On-device Gemini Nano is not available in this browser (`ON_DEVICE_UNAVAILABLE`). The Deterministic Local Security Engine below works immediately with zero network requests and never falls back to Cloud AI.
-            </p>
+          {(readiness?.status === 'unsupported' || readiness?.status === 'no') && (
+            <details className="pl-6 text-[11px] text-[var(--text-muted)]">
+              <summary className="cursor-pointer select-none font-medium text-[var(--text-muted)] hover:text-[var(--text-heading)] transition-colors">
+                Technical Diagnostics
+              </summary>
+              <p className="mt-1.5 leading-relaxed font-mono text-[10px] opacity-90">
+                Code: ON_DEVICE_UNAVAILABLE &mdash; {readiness.statusMessage}
+              </p>
+            </details>
           )}
         </div>
 
@@ -189,7 +175,7 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
           <div className="mt-4 p-4 rounded-xl bg-[#0D5663]/15 border border-[#22D3EE]/30 space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-heading)]">
               <span className="flex items-center gap-2">
-                <Download className="w-4 h-4 text-[#22D3EE] animate-bounce" />
+                <Download className="w-4 h-4 text-[#22D3EE]" />
                 Downloading on-device model components...
               </span>
               <span>{downloadProgress}%</span>
@@ -203,16 +189,47 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
           </div>
         )}
 
-        {/* Error / Unavailable Notice */}
+        {/* Error / Unavailable Notice (only shown on explicit user action) */}
         {errorState && (
-          <div className="mt-4 p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/35 space-y-2.5 text-xs">
-            <div className="flex items-center gap-2 font-bold text-[#B45309] dark:text-[#FBBF24]">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+          <div
+            className={`mt-4 p-3.5 rounded-xl border space-y-2 text-xs ${
+              errorState.code === 'ON_DEVICE_UNAVAILABLE'
+                ? 'bg-[var(--bg-card-subtle)] border-[var(--border-card)]'
+                : 'bg-[#F59E0B]/10 border-[#F59E0B]/35'
+            }`}
+          >
+            <div
+              className={`flex items-center gap-2 font-semibold ${
+                errorState.code === 'ON_DEVICE_UNAVAILABLE'
+                  ? 'text-[var(--text-heading)]'
+                  : 'text-[#B45309] dark:text-[#FBBF24] font-bold'
+              }`}
+            >
+              {errorState.code === 'ON_DEVICE_UNAVAILABLE' ? (
+                <Info className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
               <span>{errorState.title}</span>
             </div>
-            <p className="text-[var(--text-muted)] leading-relaxed">{errorState.message}</p>
-            {errorState.technicalDetails && (
-              <p className="text-[10px] font-mono opacity-80">{errorState.technicalDetails}</p>
+            {errorState.code === 'ON_DEVICE_UNAVAILABLE' ? (
+              <details className="pl-6 text-[11px] text-[var(--text-muted)]">
+                <summary className="cursor-pointer select-none font-medium hover:text-[var(--text-heading)] transition-colors">
+                  Technical Diagnostics
+                </summary>
+                <p className="mt-1.5 leading-relaxed">{errorState.message}</p>
+                <p className="mt-1 text-[10px] font-mono opacity-80">
+                  Code: {errorState.code}
+                  {errorState.technicalDetails ? ` — ${errorState.technicalDetails}` : ''}
+                </p>
+              </details>
+            ) : (
+              <>
+                <p className="text-[var(--text-muted)] leading-relaxed">{errorState.message}</p>
+                {errorState.technicalDetails && (
+                  <p className="text-[10px] font-mono opacity-80">{errorState.technicalDetails}</p>
+                )}
+              </>
             )}
           </div>
         )}

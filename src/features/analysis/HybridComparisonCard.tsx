@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { Card } from '@/components/common/Card'
 import { StatusBadge } from '@/components/common/StatusBadge'
-import { compareAnalyses } from './analysisUtils'
+import { compareAnalyses, getCorroborationPresentation } from './analysisUtils'
 import type { AnalysisRecord } from './types'
 
 interface HybridComparisonCardProps {
@@ -25,9 +25,13 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
 
   if (!comparison) return null
 
-  const isBothCompleted = Boolean(onDeviceAnalysis && cloudAnalysis)
-  const isCloudOnly = Boolean(!onDeviceAnalysis && cloudAnalysis)
   const isLocalRules = onDeviceAnalysis?.actualInferenceSource === 'local_rules'
+  const isActualOnDevice = onDeviceAnalysis?.actualInferenceSource === 'on_device'
+  const effectiveOnDevice = isLocalRules || isActualOnDevice ? onDeviceAnalysis : null
+  const effectiveCloud = cloudAnalysis?.actualInferenceSource === 'in_cloud' ? cloudAnalysis : null
+  const corroboration = getCorroborationPresentation(effectiveOnDevice, effectiveCloud)
+  const isBothCompleted = corroboration.hasValidCorroborationPair
+  const isCloudOnly = Boolean(!effectiveOnDevice && effectiveCloud)
 
   return (
     <Card className="p-5 sm:p-6 border border-[#22D3EE]/35 bg-[var(--bg-card)]">
@@ -108,38 +112,50 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
       {/* Comparison Grid */}
       {isBothCompleted ? (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Corroborated Common Threat Indicators */}
-          <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-2">
-            <h4 className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#2E8B57]" />
-              Corroborated Indicators ({comparison.commonIndicators.length})
-            </h4>
-            <p className="text-[11px] text-[var(--text-muted)]">
-              Corroborated by both on-device and cloud security evaluation:
-            </p>
-            {comparison.commonIndicators.length > 0 ? (
-              <ul className="space-y-1.5 pt-1">
-                {comparison.commonIndicators.map((item, idx) => (
-                  <li
-                    key={idx}
-                    className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)]"
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-[var(--text-muted)] italic pt-1">
-                No direct semantic overlap found between individual indicators.
+          {/* Corroborated Common Threat Indicators (only shown for a valid executed pair) */}
+          {corroboration.hasValidCorroborationPair ? (
+            <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-2">
+              <h4 className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#2E8B57]" />
+                {corroboration.heading} ({comparison.commonIndicators.length})
+              </h4>
+              <p className="text-[11px] text-[var(--text-muted)]">
+                {corroboration.subtitle}
               </p>
-            )}
-          </div>
+              {comparison.commonIndicators.length > 0 ? (
+                <ul className="space-y-1.5 pt-1">
+                  {comparison.commonIndicators.map((item, idx) => (
+                    <li
+                      key={idx}
+                      className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)]"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-[var(--text-muted)] italic pt-1">
+                  No direct semantic overlap found between individual indicators.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-2">
+              <h4 className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
+                <GitCompare className="w-4 h-4 text-[var(--text-muted)]" />
+                {corroboration.heading}
+              </h4>
+              <p className="text-[11px] text-[var(--text-muted)]">
+                {corroboration.subtitle}
+              </p>
+            </div>
+          )}
 
           {/* Distinct Model Findings */}
           <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-2">
             <h4 className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-[#159FB5]" />
-              Distinct Model Findings ({comparison.uniqueCloudFindings.length + comparison.uniqueOnDeviceFindings.length})
+              {isLocalRules ? 'Distinct Engine Findings' : 'Distinct Model Findings'} ({comparison.uniqueCloudFindings.length + comparison.uniqueOnDeviceFindings.length})
             </h4>
             <p className="text-[11px] text-[var(--text-muted)]">
               Single-source insights unique to one evaluation engine:
@@ -181,19 +197,19 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
           <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-2">
             <h4 className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
               <GitCompare className="w-4 h-4 text-[var(--text-muted)]" />
-              {cloudAnalysis ? 'On-Device Engine Status' : 'Cloud Engine Status'}
+              {effectiveCloud ? 'On-Device Engine Status' : 'Cloud Engine Status'}
             </h4>
             <p className="text-[11px] text-[var(--text-muted)]">
-              {cloudAnalysis
+              {effectiveCloud
                 ? 'Chrome Prompt API (Gemini Nano) local inference was not executed or is unavailable on this device.'
                 : 'Gemini Cloud AI requires explicit user consent before data transmission.'}
             </p>
             <div className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-muted)] space-y-1">
               <span className="font-bold text-[var(--text-heading)] block">
-                {cloudAnalysis ? 'No Local Corroboration' : 'Cloud Consent Required'}
+                {effectiveCloud ? 'No Local Corroboration' : 'Cloud Consent Required'}
               </span>
               <p>
-                {cloudAnalysis
+                {effectiveCloud
                   ? 'Dual-model comparison is inactive. Threat indicators below reflect deep contextual Cloud AI inference only.'
                   : 'To cross-examine with Gemini Cloud AI, grant explicit privacy consent in the Enhanced Cloud card.'}
               </p>
@@ -204,19 +220,21 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
           <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] space-y-2">
             <h4 className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-[#22D3EE]" />
-              {cloudAnalysis ? 'Cloud AI Findings' : isLocalRules ? 'Local Rule Findings' : 'On-Device AI Findings'} (
-              {cloudAnalysis
+              {effectiveCloud ? 'Cloud AI Findings' : isLocalRules ? 'Local Rule Findings' : 'On-Device AI Findings'} (
+              {effectiveCloud
                 ? comparison.uniqueCloudFindings.length
                 : comparison.uniqueOnDeviceFindings.length}
               )
             </h4>
             <p className="text-[11px] text-[var(--text-muted)]">
-              {cloudAnalysis
+              {effectiveCloud
                 ? 'Deep contextual threat patterns identified by Gemini Cloud:'
-                : 'Deterministic local patterns identified on-device:'}
+                : isLocalRules
+                ? 'Deterministic local patterns identified on-device:'
+                : 'On-device Gemini Nano threat patterns:'}
             </p>
             <ul className="space-y-1.5 pt-1">
-              {(cloudAnalysis
+              {(effectiveCloud
                 ? comparison.uniqueCloudFindings
                 : comparison.uniqueOnDeviceFindings
               ).map((item, idx) => (
@@ -225,11 +243,11 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
                   className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-main)] flex items-start gap-2"
                 >
                   <StatusBadge
-                    variant={cloudAnalysis ? 'ai' : isLocalRules ? 'local' : 'safe'}
+                    variant={effectiveCloud ? 'ai' : isLocalRules ? 'local' : 'safe'}
                     size="sm"
                     className="shrink-0 mt-0.5"
                   >
-                    {cloudAnalysis ? 'Cloud-Only' : isLocalRules ? 'Local Rules' : 'On-Device'}
+                    {effectiveCloud ? 'Cloud-Only' : isLocalRules ? 'Local Rules' : 'On-Device'}
                   </StatusBadge>
                   <span>{item}</span>
                 </li>

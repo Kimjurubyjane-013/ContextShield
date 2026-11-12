@@ -765,7 +765,7 @@ export function toAnalysisErrorState(
       retryable = false
       break
     case 'ON_DEVICE_UNAVAILABLE':
-      title = 'On-Device AI Unavailable'
+      title = 'On-device analysis unavailable'
       retryable = false
       break
     default:

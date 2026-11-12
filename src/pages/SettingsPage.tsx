@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import {
   CheckCircle2,
-  Info,
   Moon,
   Palette,
   Shield,
@@ -10,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { ContextShieldLogo } from '@/components/common/ContextShieldLogo'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { useTheme } from '@/context/ThemeContext'
 import type { UserSettings } from '@/types'
@@ -232,9 +232,7 @@ export const SettingsPage: React.FC = () => {
       {/* 3. About System & Version Card */}
       <Card className="p-6 sm:p-7">
         <div className="flex items-center gap-3 pb-3 border-b border-[var(--border-card)] mb-4">
-          <div className="p-2 rounded-xl bg-[#D7C4A8]/30 text-[#164E5A] dark:text-[#D7C4A8]">
-            <Info className="w-5 h-5" />
-          </div>
+          <ContextShieldLogo size="sm" />
           <div>
             <h2 className="text-base font-bold text-[var(--text-heading)]">
               About ContextShield
@@ -263,7 +261,7 @@ export const SettingsPage: React.FC = () => {
           <div className="p-3.5 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
             <span className="text-[var(--text-muted)] block mb-1">Version</span>
             <span className="font-mono text-[var(--text-accent)] font-bold">
-              v0.1.0-alpha (Solo Hackathon Release)
+              Defense Console v1.0
             </span>
           </div>
 

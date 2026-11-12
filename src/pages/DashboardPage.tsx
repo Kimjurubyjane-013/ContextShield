@@ -186,16 +186,16 @@ export const DashboardPage: React.FC = () => {
               <p className="text-sm font-bold text-[var(--text-heading)]">
                 {nanoReadiness?.status === 'readily'
                   ? 'Browser API Ready'
-                  : 'ON_DEVICE_UNAVAILABLE'}
+                  : 'On-device analysis unavailable'}
               </p>
               <StatusBadge
-                variant={nanoReadiness?.status === 'readily' ? 'safe' : 'warning'}
+                variant={nanoReadiness?.status === 'readily' ? 'safe' : 'neutral'}
                 size="sm"
                 dot
               >
                 {nanoReadiness?.status === 'readily'
                   ? 'Prompt API Detected'
-                  : 'Unsupported Device'}
+                  : 'Prompt API Not Detected'}
               </StatusBadge>
             </div>
           </Card>

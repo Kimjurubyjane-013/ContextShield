@@ -180,7 +180,7 @@ export async function runHybridAiAnalysis({
   if (targetMode === 'ONLY_ON_DEVICE' && !isLocalPromptSupported) {
     throw createAnalysisError(
       'ON_DEVICE_UNAVAILABLE',
-      'On-Device AI Unavailable',
+      'On-device analysis unavailable',
       'On-device Gemini Nano is not available on this device or browser. To analyze this message, please grant consent for enhanced cloud processing.',
       false
     )
@@ -249,7 +249,7 @@ export async function runHybridAiAnalysis({
           console.warn('On-device model initialization failed in ONLY_ON_DEVICE mode:', initErr)
           throw createAnalysisError(
             'ON_DEVICE_UNAVAILABLE',
-            'On-Device AI Unavailable',
+            'On-device analysis unavailable',
             'On-device Gemini Nano is not available on this device or browser. To analyze this message, please grant consent for enhanced cloud processing.',
             true,
             (initErr as Error).message
@@ -586,7 +586,7 @@ async function executeBrowserPromptApiFallback(
   // Prompt API is unavailable
   throw createAnalysisError(
     'ON_DEVICE_UNAVAILABLE',
-    'On-Device AI Unavailable',
+    'On-device analysis unavailable',
     'On-device Gemini Nano is not available on this device or browser. To analyze this message, please enable Enhanced Cloud Analysis with your explicit consent.',
     true,
     'Chrome Prompt API requires Chrome 128+ with flags enabled, and typically 16GB RAM.'

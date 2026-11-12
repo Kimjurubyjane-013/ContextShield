@@ -127,8 +127,7 @@ export async function checkOnDeviceReadiness(forceRefresh = false): Promise<OnDe
     } else {
       result = {
         status: 'no',
-        statusMessage:
-          'On-device AI is disabled or unsupported on this hardware configuration.',
+        statusMessage: 'On-device analysis unavailable.',
       }
     }
     cachedReadiness = result
@@ -166,7 +165,7 @@ export async function runOnDeviceAnalysis(
   if (!hasOnDevicePromptApiSupport()) {
     throw createOnDeviceError(
       'ON_DEVICE_UNAVAILABLE',
-      'On-Device AI Unavailable',
+      'On-device analysis unavailable',
       'Browser does not support the Chrome Prompt API. On-device Gemini Nano requires Chrome 128+ with flags enabled. No on-device model is available.',
       false
     )
@@ -177,7 +176,7 @@ export async function runOnDeviceAnalysis(
   if (readiness.status === 'unsupported' || readiness.status === 'no') {
     throw createOnDeviceError(
       'ON_DEVICE_UNAVAILABLE',
-      'On-Device AI Unavailable',
+      'On-device analysis unavailable',
       readiness.statusMessage,
       false
     )

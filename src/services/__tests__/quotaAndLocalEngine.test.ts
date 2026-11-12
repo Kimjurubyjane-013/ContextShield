@@ -15,8 +15,8 @@ import {
   extractUrlsAndDomains,
   runLocalRuleBasedAnalysis,
 } from '../localSecurityEngine.ts'
-import { generateUnifiedReport } from '../hybridReportEngine.ts'
-import { compareAnalyses } from '../../features/analysis/analysisUtils.ts'
+import { formatReportAsText, generateUnifiedReport } from '../hybridReportEngine.ts'
+import { compareAnalyses, getCorroborationPresentation } from '../../features/analysis/analysisUtils.ts'
 
 function assertEqual<T>(actual: T, expected: T, message?: string) {
   if (actual !== expected) {
@@ -337,6 +337,154 @@ export function runQuotaAndLocalEngineTests() {
     comp!.alignmentNote.includes('Heuristic verification') || comp!.alignmentNote.includes('local rules do not constitute a second AI model'),
     'Comparison note must state local rules do not constitute a second AI model'
   )
+
+  // 4.5 Exported Text & Source Attribution for cloud_and_local vs local_only vs cloud_only vs both_completed
+  assertEqual(multiReport.onDeviceSummary.mode, 'local', 'cloud_and_local must attribute local engine as local')
+  const multiText = formatReportAsText(multiReport)
+  assertTrue(multiText.includes('- Local Rules:'), 'Exported text must label Local Rules honestly')
+  assertFalse(multiText.includes('- On-Device AI:'), 'Exported text must NEVER label local_rules as On-Device AI')
+  assertFalse(multiText.includes('Dual-AI'), 'Exported text must NEVER claim Dual-AI for cloud_and_local')
+  if (multiReport.commonFindings.length > 0) {
+    assertTrue(
+      multiText.includes('CORROBORATED BY CLOUD AI & LOCAL RULES'),
+      'Exported text must attribute corroborated findings to Cloud AI & Local Rules'
+    )
+    assertFalse(
+      multiText.includes('CORROBORATED BY BOTH AI MODELS'),
+      'Exported text must NEVER claim both AI models corroborated cloud_and_local findings'
+    )
+  }
+
+  assertEqual(localOnlyReport.onDeviceSummary.mode, 'local')
+  const localOnlyText = formatReportAsText(localOnlyReport)
+  assertTrue(localOnlyText.includes('- Local Rules:'))
+  assertFalse(localOnlyText.includes('- On-Device AI:'))
+
+  const cloudOnlyReport = generateUnifiedReport({
+    protectedMessage: phishSample,
+    onDeviceResult: null,
+    cloudResult: dummyCloud,
+  })
+  assertEqual(cloudOnlyReport.completionStatus, 'cloud_only')
+  assertEqual(cloudOnlyReport.commonFindings.length, 0, 'cloud_only must have 0 common findings')
+  const cloudOnlyComp = compareAnalyses(null, dummyCloud)
+  assertTrue(cloudOnlyComp !== null)
+  assertEqual(cloudOnlyComp!.riskAlignment, 'SINGLE_MODEL')
+  assertEqual(cloudOnlyComp!.commonIndicators.length, 0)
+
+  // Genuine On-Device AI + Cloud AI (both_completed)
+  const actualOnDeviceResult: typeof localPhishResult = {
+    ...localPhishResult,
+    id: 'on-device-test-sample',
+    mode: 'on-device',
+    modelName: 'Gemini Nano (Chrome Prompt API)',
+    actualInferenceSource: 'on_device',
+  }
+  const bothAiReport = generateUnifiedReport({
+    protectedMessage: phishSample,
+    onDeviceResult: actualOnDeviceResult,
+    cloudResult: dummyCloud,
+  })
+  assertEqual(bothAiReport.completionStatus, 'both_completed', 'Genuine on_device + in_cloud must produce both_completed')
+  assertEqual(bothAiReport.onDeviceSummary.mode, 'on-device')
+  const bothAiText = formatReportAsText(bothAiReport)
+  assertTrue(bothAiText.includes('- On-Device AI:'))
+  if (bothAiReport.commonFindings.length > 0) {
+    assertTrue(bothAiText.includes('CORROBORATED BY BOTH AI MODELS'))
+  }
+
+  // Unattributed on-device record (neither 'on_device' nor 'local_rules') must be excluded
+  const unattributedOnDevice: typeof localPhishResult = {
+    ...localPhishResult,
+    id: 'unattributed-on-device',
+    mode: 'on-device',
+    actualInferenceSource: undefined,
+  }
+  const excludedReport = generateUnifiedReport({
+    protectedMessage: phishSample,
+    onDeviceResult: unattributedOnDevice,
+    cloudResult: dummyCloud,
+  })
+  assertEqual(excludedReport.completionStatus, 'cloud_only', 'Unattributed on-device record must be excluded')
+  assertEqual(excludedReport.onDeviceSummary.status, 'unavailable')
+  assertEqual(excludedReport.commonFindings.length, 0)
+  const excludedComp = compareAnalyses(unattributedOnDevice, dummyCloud)
+  assertTrue(excludedComp !== null)
+  assertEqual(excludedComp!.riskAlignment, 'SINGLE_MODEL')
+  assertEqual(excludedComp!.commonIndicators.length, 0)
+
+  // 4.6 Phase 4.7: Strict Cloud Inference Attribution (actualInferenceSource === 'in_cloud' only)
+  const validCloudComp = compareAnalyses(null, dummyCloud)
+  assertTrue(validCloudComp !== null, 'Valid in_cloud record must be accepted')
+  assertEqual(validCloudComp!.riskAlignment, 'SINGLE_MODEL')
+  assertTrue(validCloudComp!.uniqueCloudFindings.length > 0)
+
+  const missingSourceCloud: typeof localPhishResult = {
+    ...dummyCloud,
+    id: 'cloud-missing-source',
+    mode: 'cloud',
+    actualInferenceSource: undefined,
+  }
+  assertEqual(
+    compareAnalyses(null, missingSourceCloud),
+    null,
+    'Cloud mode with missing actualInferenceSource must be excluded'
+  )
+  const missingCloudWithLocalComp = compareAnalyses(localPhishResult, missingSourceCloud)
+  assertTrue(missingCloudWithLocalComp !== null)
+  assertEqual(missingCloudWithLocalComp!.riskAlignment, 'SINGLE_MODEL')
+  assertEqual(missingCloudWithLocalComp!.commonIndicators.length, 0, 'Missing-source cloud record must not create corroboration')
+  assertEqual(missingCloudWithLocalComp!.uniqueCloudFindings.length, 0)
+
+  const localRulesTaggedCloud: typeof localPhishResult = {
+    ...dummyCloud,
+    id: 'cloud-local-rules-source',
+    mode: 'cloud',
+    actualInferenceSource: 'local_rules',
+  }
+  assertEqual(
+    compareAnalyses(null, localRulesTaggedCloud),
+    null,
+    'Cloud mode with actualInferenceSource local_rules must be excluded from cloud comparison'
+  )
+  const localTaggedCloudWithLocalComp = compareAnalyses(localPhishResult, localRulesTaggedCloud)
+  assertTrue(localTaggedCloudWithLocalComp !== null)
+  assertEqual(localTaggedCloudWithLocalComp!.riskAlignment, 'SINGLE_MODEL')
+  assertEqual(localTaggedCloudWithLocalComp!.commonIndicators.length, 0, 'local_rules-tagged cloud record must not create corroboration')
+  assertEqual(localTaggedCloudWithLocalComp!.uniqueCloudFindings.length, 0)
+
+  assertEqual(
+    compareAnalyses(unattributedOnDevice, missingSourceCloud),
+    null,
+    'Unattributed on-device and unattributed cloud records must both be excluded'
+  )
+  assertEqual(compareAnalyses(null, null), null)
+
+  // 4.7 Corroboration Presentation Guard (Cloud-only, Local-only, Cloud + Local Rules, Gemini Nano + Cloud)
+  const cloudOnlyPres = getCorroborationPresentation(null, dummyCloud)
+  assertFalse(cloudOnlyPres.hasValidCorroborationPair, 'Cloud-only must NOT have a valid corroboration pair')
+  assertFalse(cloudOnlyPres.subtitle.includes('Gemini Nano'), 'Cloud-only must NEVER mention Gemini Nano corroboration')
+  assertEqual(cloudOnlyPres.heading, 'Non-Corroborated Findings')
+
+  const localOnlyPres = getCorroborationPresentation(localPhishResult, null)
+  assertFalse(localOnlyPres.hasValidCorroborationPair, 'Local-only must NOT have a valid corroboration pair')
+  assertFalse(localOnlyPres.subtitle.includes('Gemini Nano'))
+  assertEqual(localOnlyPres.heading, 'Non-Corroborated Findings')
+
+  const cloudAndLocalPres = getCorroborationPresentation(localPhishResult, dummyCloud)
+  assertTrue(cloudAndLocalPres.hasValidCorroborationPair, 'Cloud + Local Rules is a valid corroboration pair')
+  assertEqual(cloudAndLocalPres.heading, 'Corroborated Indicators')
+  assertTrue(cloudAndLocalPres.subtitle.includes('Cloud AI and deterministic Local Rules'))
+  assertFalse(cloudAndLocalPres.subtitle.includes('Gemini Nano'))
+
+  const nanoAndCloudPres = getCorroborationPresentation(actualOnDeviceResult, dummyCloud)
+  assertTrue(nanoAndCloudPres.hasValidCorroborationPair, 'Actual Gemini Nano + Cloud is a valid corroboration pair')
+  assertEqual(nanoAndCloudPres.heading, 'Corroborated Indicators')
+  assertTrue(nanoAndCloudPres.subtitle.includes('On-Device Gemini Nano and Cloud AI'))
+
+  const invalidPairPres = getCorroborationPresentation(unattributedOnDevice, missingSourceCloud)
+  assertFalse(invalidPairPres.hasValidCorroborationPair, 'Invalid pair must NEVER allow corroboration')
+  assertEqual(invalidPairPres.heading, 'Non-Corroborated Findings')
 
   console.log('✓ All Quota & Local Security Engine unit test assertions passed successfully!')
 }
