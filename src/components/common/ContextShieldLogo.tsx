@@ -14,60 +14,83 @@ const ICON_SIZES: Record<'sm' | 'md' | 'lg', string> = {
 }
 
 /**
- * Official ContextShield geometric shield emblem.
- * Designed for crisp rendering across dark/light surfaces without heavy gradients or blur filters.
+ * ContextShield 3D Cyber Defense Logo
  */
 export const ContextShieldLogo: React.FC<ContextShieldLogoProps> = ({
   size = 'md',
   showWordmark = false,
-  subtitle,
+  subtitle = 'Analyze • Verify • Stay Safe',
   className = '',
 }) => {
   return (
     <div className={`inline-flex items-center gap-3 select-none ${className}`}>
-      <svg
-        viewBox="0 0 40 40"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className={`${ICON_SIZES[size]} shrink-0`}
-        aria-hidden="true"
-      >
-        {/* Outer Shield Frame */}
-        <path
-          d="M20 3L34 8.75V19.25C34 27.95 28.05 34.9 20 37.5C11.95 34.9 6 27.95 6 19.25V8.75L20 3Z"
-          fill="#071827"
-          stroke="#22D3EE"
-          strokeWidth="2"
-          strokeLinejoin="round"
+      <div className={`relative ${ICON_SIZES[size]} shrink-0 flex items-center justify-center`}>
+        <div
+          className="absolute inset-0 rounded-xl bg-gradient-to-tr from-[#087BFF]/30 to-[#00D9FF]/40 blur-md pointer-events-none"
+          aria-hidden="true"
         />
-        {/* Inner Defense Core */}
-        <path
-          d="M20 7.25L30 11.4V19.15C30 25.65 25.7 30.85 20 33.1C14.3 30.85 10 25.65 10 19.15V11.4L20 7.25Z"
-          fill="#0D5663"
-          fillOpacity="0.45"
-          stroke="#159FB5"
-          strokeWidth="1.25"
-          strokeLinejoin="round"
-        />
-        {/* Verification Check / Signal Circuit */}
-        <path
-          d="M15.25 20.25L18.5 23.5L25.25 16.5"
-          stroke="#22D3EE"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {/* Top Telemetry Node */}
-        <circle cx="20" cy="11.5" r="1.4" fill="#22D3EE" />
-      </svg>
+        <svg
+          viewBox="0 0 44 44"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full relative z-10"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="navLogoGrad" x1="6" y1="4" x2="38" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#00D9FF" />
+              <stop offset="50%" stopColor="#087BFF" />
+              <stop offset="100%" stopColor="#00D6B2" />
+            </linearGradient>
+            <linearGradient id="navLogoFace" x1="10" y1="6" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#0D2E5C" />
+              <stop offset="100%" stopColor="#061326" />
+            </linearGradient>
+          </defs>
+
+          {/* Shield Outer Shell */}
+          <path
+            d="M 22 5 C 31 5 37 9 37 19 C 37 30 27 37 22 39.5 C 17 37 7 30 7 19 C 7 9 13 5 22 5 Z"
+            fill="url(#navLogoFace)"
+            stroke="url(#navLogoGrad)"
+            strokeWidth="2.5"
+            strokeLinejoin="round"
+          />
+
+          {/* Shield Inner Face */}
+          <path
+            d="M 22 9 C 28 9 33 12 33 19 C 33 27 26 33 22 35 C 18 33 11 27 11 19 C 11 12 16 9 22 9 Z"
+            fill="#061426"
+            stroke="#00D9FF"
+            strokeWidth="1.2"
+            strokeOpacity="0.75"
+          />
+
+          {/* Checkmark */}
+          <path
+            d="M 17 21 L 21 25 L 28 17"
+            stroke="#00D9FF"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M 17 21 L 21 25 L 28 17"
+            stroke="#FFFFFF"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
 
       {showWordmark && (
-        <div className="min-w-0">
-          <div className="font-extrabold text-lg tracking-tight leading-none text-[#EAF4F8]">
-            Context<span className="text-[#22D3EE]">Shield</span>
+        <div className="min-w-0 text-left">
+          <div className="font-extrabold text-lg tracking-tight leading-none text-[var(--text-heading)]">
+            Context<span className="text-[#00D9FF]">Shield</span>
           </div>
           {subtitle && (
-            <p className="text-[10px] text-[#8EB2C2] font-semibold leading-tight tracking-wider uppercase mt-1">
+            <p className="text-[10px] text-[var(--text-muted)] font-medium leading-tight tracking-wider mt-1">
               {subtitle}
             </p>
           )}

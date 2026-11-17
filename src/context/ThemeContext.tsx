@@ -27,6 +27,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (saved === 'dark' || saved === 'light') {
         return saved
       }
+      if (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light') {
+        return 'light'
+      }
     } catch {
       // Ignore storage access errors
     }

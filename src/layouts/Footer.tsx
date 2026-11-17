@@ -7,66 +7,66 @@ export const Footer: React.FC = () => {
   const [termsModalOpen, setTermsModalOpen] = useState(false)
 
   return (
-    <footer className="mt-auto border-t border-[var(--border-card)] bg-[var(--bg-footer)] py-5 px-6 text-xs text-[var(--text-muted)] transition-colors duration-200">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Left: Branding & Disclaimer */}
-        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+    <footer className="mt-auto border-t border-[var(--border-card)] bg-[var(--bg-footer)] py-6 px-6 text-xs text-[var(--text-muted)] transition-colors duration-250">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Left: Branding & Tagline */}
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 text-center sm:text-left">
           <div className="inline-flex items-center gap-2">
             <ContextShieldLogo size="sm" />
-            <span className="font-bold text-[#0D5663] dark:text-[#22D3EE]">ContextShield</span>
+            <span className="font-extrabold text-[var(--text-heading)]">
+              Context<span className="text-[#00D9FF]">Shield</span>
+            </span>
           </div>
-          <span className="hidden sm:inline opacity-40">&bull;</span>
-          <span>Privacy-First Hybrid AI Security Console</span>
+          <span className="hidden sm:inline opacity-30">&bull;</span>
+          <span>Privacy-First Hybrid AI Security Command</span>
         </div>
 
-        {/* Right: Policy Links & Version */}
+        {/* Right: Policy Links & Console Version */}
         <div className="flex flex-wrap items-center justify-center gap-3 text-center">
           <button
             onClick={() => setPrivacyModalOpen(true)}
-            className="hover:text-[var(--text-accent)] transition-colors underline-offset-4 hover:underline cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60 rounded px-1"
+            className="hover:text-[#00D9FF] transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D9FF]/60 rounded px-1"
           >
             Privacy Architecture
           </button>
-          <span className="opacity-40">&bull;</span>
+          <span className="opacity-30">&bull;</span>
           <button
             onClick={() => setTermsModalOpen(true)}
-            className="hover:text-[var(--text-accent)] transition-colors underline-offset-4 hover:underline cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE]/60 rounded px-1"
+            className="hover:text-[#00D9FF] transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D9FF]/60 rounded px-1"
           >
             Terms of Use
           </button>
-          <span className="opacity-40">&bull;</span>
-          <span className="px-2.5 py-0.5 rounded-full bg-[#0D5663]/15 dark:bg-[#0B2735] border border-[var(--border-card)] text-[10px] font-mono text-[var(--text-main)]">
-            Defense Console v1.0
+          <span className="opacity-30">&bull;</span>
+          <span className="px-3 py-1 rounded-full bg-[var(--bg-card)] border border-[var(--border-card)] text-[11px] font-mono text-[var(--text-main)] shadow-xs">
+            Defense Console v1.0.0
           </span>
         </div>
       </div>
 
-      {/* Privacy Modal */}
+      {/* Privacy Principles Modal */}
       <Modal
         isOpen={privacyModalOpen}
         onClose={() => setPrivacyModalOpen(false)}
         title="ContextShield Privacy Principles"
       >
         <div className="space-y-4 text-xs sm:text-sm text-[var(--text-main)] leading-relaxed">
-          <div className="p-3.5 rounded-xl bg-[#0D5663]/12 border border-[#22D3EE]/30">
-            <p className="font-bold text-[#0D5663] dark:text-[#22D3EE]">
+          <div className="p-4 rounded-2xl bg-[#087BFF]/10 border border-[#087BFF]/30">
+            <p className="font-bold text-[#087BFF] dark:text-[#00D9FF]">
               Guarantee 1: Zero Personal Identifiable Information (PII) Leakage
             </p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
-              Any scanned message is stripped of phone numbers, national IDs, emails, and account identifiers locally before external analysis.
+            <p className="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed">
+              Every message is automatically stripped of phone numbers, national identification, email addresses, credit cards, and sensitive tokens locally in browser memory before any external model analysis.
             </p>
           </div>
-          <div className="p-3.5 rounded-xl bg-[#22C55E]/12 border border-[#22C55E]/30">
-            <p className="font-bold text-[#15803D] dark:text-[#4ADE80]">
-              Guarantee 2: Local Client Storage Only
+
+          <div className="p-4 rounded-2xl bg-[#00D6B2]/10 border border-[#00D6B2]/30">
+            <p className="font-bold text-[#00A88B] dark:text-[#00D6B2]">
+              Guarantee 2: Client-Edge Heuristics &amp; Explicit Cloud Consent
             </p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
-              Your scan history remains in your local browser cache. You can purge or export all redacted records at any time from Privacy &amp; Data.
+            <p className="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed">
+              Deterministic rule checks execute 100% offline with zero network requests. Cloud AI operates solely on client-masked text after explicit user consent.
             </p>
           </div>
-          <p className="text-xs text-[var(--text-muted)]">
-            Developed specifically to combat emerging social engineering, smishing, and financial fraud campaigns.
-          </p>
         </div>
       </Modal>
 

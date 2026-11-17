@@ -5,31 +5,36 @@ export const SafetyIllustration: React.FC<{ className?: string }> = ({
 }) => {
   return (
     <div className={`relative flex items-center justify-center select-none ${className}`}>
-      <svg viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-        {/* Soft Background Warm Halo */}
-        <circle cx="90" cy="90" r="75" fill="#A6C5C1" fillOpacity="0.18" />
-        <circle cx="90" cy="90" r="58" fill="#F8F5EE" fillOpacity="0.85" />
+      <div
+        className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#087BFF]/20 via-[#00D9FF]/25 to-transparent blur-2xl pointer-events-none"
+        aria-hidden="true"
+      />
+      <svg viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full relative z-10">
+        <circle cx="90" cy="90" r="76" stroke="#087BFF" strokeWidth="1" strokeDasharray="4 4" opacity="0.35" />
+        <circle cx="90" cy="90" r="60" fill="var(--bg-card)" stroke="#00D9FF" strokeWidth="1.5" strokeOpacity="0.6" />
 
-        {/* Natural Leaves */}
-        <path d="M 40 70 C 32 55 48 42 62 48 C 66 62 52 75 40 70 Z" fill="#A6C5C1" opacity="0.8" />
-        <path d="M 140 115 C 148 130 132 142 118 138 C 114 124 128 110 140 115 Z" fill="#D7C4A8" opacity="0.85" />
-
-        {/* Smartphone Device Outline with Deep Teal */}
-        <rect x="62" y="38" width="56" height="104" rx="12" fill="#164E5A" stroke="#35C6D9" strokeWidth="2" />
-        {/* Screen Area */}
-        <rect x="68" y="48" width="44" height="76" rx="6" fill="#F8F5EE" />
-
-        {/* Shield icon on phone screen */}
+        {/* Shield Frame */}
         <path
-          d="M 90 60 C 100 60 104 64 104 74 C 104 88 94 96 90 99 C 86 96 76 88 76 74 C 76 64 80 60 90 60 Z"
-          fill="#159FB5"
+          d="M 90 48 C 112 48 124 58 124 82 C 124 110 102 126 90 134 C 78 126 56 110 56 82 C 56 58 68 48 90 48 Z"
+          fill="#087BFF"
+          fillOpacity="0.12"
+          stroke="#00D9FF"
+          strokeWidth="2.5"
         />
-        <circle cx="90" cy="77" r="4" fill="#F8F5EE" />
-        <path d="M 88 80 L 87 87 H 93 L 92 80 Z" fill="#F8F5EE" />
 
-        {/* Floating Sparkle / AI Node */}
-        <circle cx="128" cy="62" r="3.5" fill="#35C6D9" />
-        <circle cx="48" cy="112" r="3" fill="#159FB5" />
+        {/* Inner Lock Node */}
+        <path
+          d="M 80 82 V 74 C 80 68 84 64 90 64 C 96 64 100 68 100 74 V 82"
+          stroke="#00D6B2"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <rect x="76" y="82" width="28" height="24" rx="6" fill="#07152B" stroke="#00D6B2" strokeWidth="2" />
+        <circle cx="90" cy="93" r="2.5" fill="#00D9FF" />
+
+        {/* Orbit Nodes */}
+        <circle cx="140" cy="65" r="3.5" fill="#00D9FF" />
+        <circle cx="44" cy="115" r="3" fill="#00D6B2" />
       </svg>
     </div>
   )

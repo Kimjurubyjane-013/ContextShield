@@ -121,7 +121,7 @@ export const PrivacyPage: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="p-2.5 rounded-xl bg-[#0D5663] text-[#22D3EE]">
+                    <div className="p-2.5 rounded-2xl bg-[#087BFF]/15 text-[#00D9FF] border border-[#00D9FF]/30">
                       <Icon className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider font-bold">
@@ -191,7 +191,7 @@ export const PrivacyPage: React.FC = () => {
         <Card className="p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 rounded-xl bg-[#0D5663] text-[#22D3EE]">
+              <div className="p-2.5 rounded-2xl bg-[#087BFF]/15 text-[#00D9FF] border border-[#00D9FF]/30">
                 <Database className="w-5 h-5" />
               </div>
               <div>

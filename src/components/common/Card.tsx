@@ -1,7 +1,7 @@
 import React from 'react'
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'subtle' | 'featured' | 'interactive'
+  variant?: 'default' | 'subtle' | 'elevated' | 'interactive' | 'glass'
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -10,17 +10,19 @@ export const Card: React.FC<CardProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'rounded-2xl transition-all duration-200 overflow-hidden'
+  const baseStyles = 'rounded-3xl transition-all duration-250 overflow-hidden relative'
 
   const variantStyles = {
     default:
       'bg-[var(--bg-card)] border border-[var(--border-card)] shadow-[var(--shadow-card)] text-[var(--text-main)]',
     subtle:
       'bg-[var(--bg-card-subtle)] border border-[var(--border-card)] text-[var(--text-main)]',
-    featured:
-      'bg-[var(--bg-card)] border border-[#0D5663]/55 dark:border-[#22D3EE]/45 shadow-[0_8px_24px_rgba(13,86,99,0.18)] text-[var(--text-main)]',
+    elevated:
+      'bg-[var(--bg-elevated)] border border-[var(--border-card)] shadow-xl text-[var(--text-main)]',
+    glass:
+      'bg-[var(--bg-card)] backdrop-blur-md border border-[var(--border-card)] shadow-[var(--shadow-card)] text-[var(--text-main)]',
     interactive:
-      'bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[#0D5663]/70 dark:hover:border-[#22D3EE]/60 hover:shadow-[0_8px_22px_rgba(34,211,238,0.1)] hover:translate-y-[-1px] cursor-pointer text-[var(--text-main)]',
+      'bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[#00D9FF]/50 hover:shadow-[0_8px_28px_rgba(0,217,255,0.14)] hover:translate-y-[-2px] cursor-pointer text-[var(--text-main)]',
   }
 
   return (

@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import {
   AlertCircle,
   ArrowRight,
-  CheckCircle2,
   ClipboardPaste,
   FileImage,
+  Globe,
   Info,
   Lock,
   MessageSquare,
@@ -13,10 +13,12 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  Zap,
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { MiniShieldIllustration } from '@/components/illustrations/MiniShieldIllustration'
 import { useNavigation } from '@/context/NavigationContext'
 import { useSecurity } from '@/context/SecurityContext'
 import { PRESET_ATTACKS } from '@/data/mockSecurityData'
@@ -25,17 +27,20 @@ import { formatFileSize, validateImageFile, validateMessageInput } from './scann
 import { MAX_MESSAGE_LENGTH, type UploadedScreenshot } from './types'
 import { detectPii, generateMaskedText, type DetectionSummary } from '@/features/privacy'
 
+type InputTab = 'text' | 'url' | 'file'
+
 export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const { setCurrentPage } = useNavigation()
   const { analyzeMessage } = useSecurity()
+  const [activeTab, setActiveTab] = useState<InputTab>('text')
   const [inputText, setInputText] = useState('')
   const [screenshot, setScreenshot] = useState<UploadedScreenshot | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [scanSubmitted, setScanSubmitted] = useState(false)
-  const [summary, setSummary] = useState<DetectionSummary | null>(null)
-  const [maskedPreview, setMaskedPreview] = useState('')
+  const [, setSummary] = useState<DetectionSummary | null>(null)
+  const [, setMaskedPreview] = useState('')
   const [quickScanResult, setQuickScanResult] = useState<ScanResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -158,23 +163,29 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
   const isScanDisabled = inputText.trim().length === 0 || isSubmitting
 
   return (
-    <Card className="p-5 sm:p-6">
-      {/* Widget Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-[var(--border-card)]">
+    <Card className="p-6 sm:p-8 bg-[var(--bg-card)] border border-[var(--border-card)] shadow-[var(--shadow-card)] relative overflow-hidden">
+      {/* Ambient background glow */}
+      <div
+        className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-[#00D9FF]/10 via-[#087BFF]/10 to-transparent blur-3xl pointer-events-none"
+        aria-hidden="true"
+      />
+
+      {/* Widget Header with Lightning Icon */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-5 border-b border-[var(--border-card)] relative z-10">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="p-2 rounded-xl bg-[#0D5663]/15 dark:bg-[#0D5663]/45 text-[#0D5663] dark:text-[#22D3EE] border border-[#22D3EE]/25">
-              <MessageSquare className="w-5 h-5" />
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="p-2.5 rounded-2xl bg-[#087BFF]/15 border border-[#00D9FF]/30 text-[#00D9FF] shadow-[0_0_16px_rgba(0,217,255,0.2)]">
+              <Zap className="w-5 h-5 text-[#00D9FF]" />
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-heading)]">
-              Quick Security Scanner
+            <h2 className="text-xl sm:text-2xl font-black text-[var(--text-heading)] tracking-tight">
+              Start a New Analysis
             </h2>
             <StatusBadge variant="local" size="sm" dot>
-              Zero Network
+              Zero Cloud Leakage
             </StatusBadge>
           </div>
-          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
-            Inspect suspicious messages locally—sensitive PII is masked automatically before screening.
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1.5">
+            Inspect suspicious messages, links, or attachments locally with client-side PII protection.
           </p>
         </div>
 
@@ -184,74 +195,164 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
           variant="outline"
           size="sm"
           onClick={() => setCurrentPage('scanner')}
-          icon={<Lock className="w-3.5 h-3.5 text-[var(--text-accent)]" />}
+          icon={<Lock className="w-3.5 h-3.5 text-[#00D9FF]" />}
         >
           <span>Full Hybrid Scanner</span>
           <ArrowRight className="w-3.5 h-3.5 ml-1" />
         </Button>
       </div>
 
-      {/* Quick Sample Messages */}
-      <div className="mb-4">
-        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block mb-2">
-          Try Sample Messages:
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {PRESET_ATTACKS.map((preset, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handlePresetClick(preset.text)}
-              className="text-xs px-3 py-1.5 rounded-lg bg-[var(--bg-card-subtle)] hover:bg-[#159FB5]/15 text-[var(--text-main)] border border-[var(--border-card)] transition-colors cursor-pointer text-left"
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
+      {/* URL / File / Text Selection Tabs (as required in prompt section 4E) */}
+      <div className="flex items-center gap-2 mb-5 p-1.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-card)] w-fit max-w-full overflow-x-auto relative z-10">
+        <button
+          type="button"
+          onClick={() => setActiveTab('text')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'text'
+              ? 'bg-[#087BFF] text-white shadow-md'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-heading)]'
+          }`}
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>Text &amp; Message</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('url')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'url'
+              ? 'bg-[#087BFF] text-white shadow-md'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-heading)]'
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>Suspicious URL / Presets</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('file')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'file'
+              ? 'bg-[#087BFF] text-white shadow-md'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-heading)]'
+          }`}
+        >
+          <FileImage className="w-3.5 h-3.5" />
+          <span>Screenshot &amp; File</span>
+        </button>
       </div>
 
-      {/* Main Scanner Form */}
-      <form onSubmit={handleAnalyze} className="space-y-4">
-        <div className="relative">
-          <textarea
-            value={inputText}
-            onChange={handleTextChange}
-            maxLength={MAX_MESSAGE_LENGTH}
-            placeholder="Paste or type a suspicious message here..."
-            rows={compact ? 3 : 4}
-            className="w-full p-4 rounded-xl text-xs sm:text-sm bg-[var(--bg-main)] border border-[var(--border-card)] text-[var(--text-main)] placeholder-[var(--text-muted)]/70 focus:outline-none focus:ring-2 focus:ring-[#159FB5]/40 focus:border-[#159FB5] resize-y transition-all font-mono"
-          />
+      {/* Presets Bar when on URL / Presets Tab */}
+      {activeTab === 'url' && (
+        <div className="mb-5 p-4 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-card)] relative z-10 animate-in fade-in duration-200">
+          <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block mb-2.5">
+            Load Preset Threat Scenario:
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {PRESET_ATTACKS.map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  handlePresetClick(preset.text)
+                  setActiveTab('text')
+                }}
+                className="text-xs px-3.5 py-2 rounded-xl bg-[var(--bg-card)] hover:border-[#00D9FF]/50 hover:bg-[#087BFF]/10 text-[var(--text-main)] border border-[var(--border-card)] transition-all cursor-pointer text-left font-medium shadow-xs"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-          {/* Live Character Counter */}
-          <div className="absolute right-3 bottom-3 flex items-center gap-2 text-[11px] text-[var(--text-muted)] bg-[var(--bg-card)]/90 px-2 py-0.5 rounded-md backdrop-blur-xs border border-[var(--border-card)] font-mono">
-            <span>
-              {inputText.length.toLocaleString()} / {MAX_MESSAGE_LENGTH.toLocaleString()} characters
-            </span>
+      {/* File Upload Zone when on File Tab */}
+      {activeTab === 'file' && (
+        <div className="mb-5 p-6 rounded-2xl border-2 border-dashed border-[var(--border-card)] hover:border-[#00D9FF]/50 bg-[var(--bg-card-subtle)]/50 text-center relative z-10 transition-colors animate-in fade-in duration-200">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="scanner-widget-file-tab"
+          />
+          <label htmlFor="scanner-widget-file-tab" className="cursor-pointer block space-y-2">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#087BFF]/15 border border-[#00D9FF]/30 flex items-center justify-center text-[#00D9FF]">
+              <Upload className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-bold text-[var(--text-heading)]">
+              {screenshot ? 'Replace Screenshot Attachment' : 'Upload Screenshot of Suspicious Message'}
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Supports PNG, JPG, WEBP up to 5MB. Evaluated client-side.
+            </p>
+          </label>
+        </div>
+      )}
+
+      {/* Main Scanner Input & Supporting Visual Grid */}
+      <form onSubmit={handleAnalyze} className="space-y-4 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          {/* Input text area (8 cols on lg) */}
+          <div className="lg:col-span-8 relative">
+            <textarea
+              value={inputText}
+              onChange={handleTextChange}
+              maxLength={MAX_MESSAGE_LENGTH}
+              placeholder="Paste or type suspicious message, smishing text, email content, or link here..."
+              rows={compact ? 4 : 5}
+              className="w-full p-4.5 rounded-2xl text-xs sm:text-sm bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-main)] placeholder-[var(--text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/40 focus:border-[#00D9FF] resize-y transition-all font-mono leading-relaxed"
+            />
+
+            {/* Live Character Counter */}
+            <div className="absolute right-3.5 bottom-3.5 flex items-center gap-2 text-[11px] text-[var(--text-muted)] bg-[var(--bg-card)]/90 px-2.5 py-1 rounded-lg backdrop-blur-xs border border-[var(--border-card)] font-mono">
+              <span>
+                {inputText.length.toLocaleString()} / {MAX_MESSAGE_LENGTH.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {/* Supporting 3D Decorative Shield Visual on Right (4 cols on lg, as requested in prompt section 4E) */}
+          <div className="hidden lg:flex lg:col-span-4 h-full min-h-[140px] rounded-2xl bg-gradient-to-br from-[#0B2447]/60 via-[#07152B]/80 to-[var(--bg-card)] border border-[var(--border-card)] items-center justify-center p-4 relative overflow-hidden">
+            <div className="absolute inset-0 bg-radial from-[#00D9FF]/15 to-transparent pointer-events-none" />
+            <div className="flex flex-col items-center text-center space-y-1 relative z-10">
+              <MiniShieldIllustration className="w-16 h-16" />
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">
+                Multi-Layer Screening
+              </span>
+              <span className="text-[10px] text-[var(--text-muted)]">
+                Local Heuristics + Cloud AI
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Attached Screenshot Preview Pill */}
         {screenshot && (
-          <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)]">
+          <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-card)]">
             <div className="flex items-center gap-3 min-w-0">
               <img
                 src={screenshot.previewUrl}
                 alt={screenshot.name}
-                className="w-12 h-12 rounded-lg object-cover border border-[var(--border-card)] shrink-0"
+                className="w-12 h-12 rounded-xl object-cover border border-[var(--border-card)] shrink-0"
               />
               <div className="min-w-0">
                 <p className="text-xs font-bold text-[var(--text-heading)] truncate">
                   {screenshot.name}
                 </p>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  {formatFileSize(screenshot.size)} &bull; Preview attached
+                  {formatFileSize(screenshot.size)} &bull; Screenshot ready for analysis
                 </p>
               </div>
             </div>
+
             <button
               type="button"
               onClick={handleRemoveScreenshot}
-              className="p-1.5 rounded-lg text-[#E07A5F] hover:bg-[#E07A5F]/15 transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-[#EF4444] hover:bg-[#EF4444]/15 transition-colors cursor-pointer"
               title="Remove image"
             >
               <Trash2 className="w-4 h-4" />
@@ -261,29 +362,15 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
 
         {/* Validation or File Errors */}
         {(validationError || fileError) && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-[#E07A5F]/15 border border-[#E07A5F]/30 text-xs text-[#B8573D] dark:text-[#F3A58E]">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#E07A5F]" />
+          <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-[#EF4444]/15 border border-[#EF4444]/35 text-xs text-[#EF4444]">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#EF4444]" />
             <span>{validationError || fileError}</span>
           </div>
         )}
 
-        {/* Privacy Notice */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--border-card)] text-xs text-[var(--text-muted)]">
-          <span>
-            Your privacy matters. Review your message before sending it for analysis. Cloud processing will require your explicit consent.
-          </span>
-          <button
-            type="button"
-            onClick={() => setCurrentPage('privacy')}
-            className="text-[var(--text-accent)] font-semibold hover:underline shrink-0 self-start sm:self-center cursor-pointer"
-          >
-            Privacy Center &rarr;
-          </button>
-        </div>
-
-        {/* Upload screenshot bar & Action buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-          {/* Left utilities */}
+        {/* Action Buttons Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+          {/* Left Utilities */}
           <div className="flex flex-wrap items-center gap-2">
             <input
               ref={fileInputRef}
@@ -291,14 +378,14 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
               accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
               onChange={handleFileUpload}
               className="hidden"
-              id="dashboard-screenshot-upload"
+              id="dashboard-screenshot-upload-main"
             />
             <label
-              htmlFor="dashboard-screenshot-upload"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--bg-card-subtle)] hover:bg-[#159FB5]/15 text-[var(--text-main)] border border-[var(--border-card)] transition-colors cursor-pointer"
+              htmlFor="dashboard-screenshot-upload-main"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[var(--bg-card-subtle)] hover:bg-[#087BFF]/10 text-[var(--text-main)] border border-[var(--border-card)] transition-colors cursor-pointer"
             >
-              <Upload className="w-4 h-4 text-[var(--text-accent)]" />
-              <span>{screenshot ? 'Replace Screenshot' : 'Browse Files'}</span>
+              <Upload className="w-3.5 h-3.5 text-[#00D9FF]" />
+              <span>{screenshot ? 'Replace File' : 'Browse Files'}</span>
             </label>
 
             <Button
@@ -306,14 +393,14 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
               variant="outline"
               size="sm"
               onClick={handlePaste}
-              icon={<ClipboardPaste className="w-3.5 h-3.5 text-[var(--text-accent)]" />}
+              icon={<ClipboardPaste className="w-3.5 h-3.5 text-[#00D9FF]" />}
             >
               Paste
             </Button>
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {(inputText.length > 0 || screenshot) && (
               <Button
                 type="button"
@@ -325,9 +412,10 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
                 Clear
               </Button>
             )}
+
             <Button
               type="submit"
-              variant="primary"
+              variant="gradient"
               size="md"
               disabled={isScanDisabled}
               icon={
@@ -338,24 +426,24 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
                 )
               }
             >
-              {isSubmitting ? 'Preparing...' : 'Analyze Message'}
+              {isSubmitting ? 'Evaluating...' : 'Analyze Message'}
             </Button>
           </div>
         </div>
       </form>
 
-      {/* Real Local Rule-Based Screening Result */}
+      {/* Real Local Screening Result Display */}
       {scanSubmitted && quickScanResult && (
         <div
           role="status"
-          className="mt-6 pt-5 border-t border-[var(--border-card)] animate-in fade-in duration-300 space-y-3"
+          className="mt-6 pt-6 border-t border-[var(--border-card)] animate-in fade-in duration-300 space-y-4 relative z-10"
         >
-          <div className="p-4 rounded-xl bg-[#0D5663]/10 border border-[#22D3EE]/30 flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-[#0D5663]/20 text-[#22D3EE] shrink-0">
-              <Info className="w-5 h-5" />
-            </div>
-            <div className="space-y-2 flex-1 min-w-0">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="p-5 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-card)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="p-2.5 rounded-xl bg-[#087BFF]/20 text-[#00D9FF] shrink-0 border border-[#00D9FF]/30">
+                <Info className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge
                     variant={
@@ -369,69 +457,33 @@ export const ScannerWidget: React.FC<{ compact?: boolean }> = ({ compact = false
                     dot
                   >
                     {quickScanResult.status === 'safe'
-                      ? 'Low Risk'
+                      ? 'Safe'
                       : quickScanResult.status === 'suspicious'
-                      ? 'Medium Risk'
-                      : 'High Risk'}
+                      ? 'Suspicious'
+                      : 'Threat Flagged'}
                   </StatusBadge>
                   <StatusBadge variant="local" size="sm">
-                    Deterministic Rule-Based
+                    {quickScanResult.analysisMethod}
                   </StatusBadge>
+                  <span className="text-xs font-mono font-bold text-[var(--text-heading)]">
+                    Score: {quickScanResult.threatScore}/100
+                  </span>
                 </div>
-                <span className="text-xs font-mono font-bold text-[var(--text-heading)]">
-                  Score: {quickScanResult.threatScore}/100
-                </span>
-              </div>
-
-              <p className="text-xs sm:text-sm font-semibold text-[var(--text-heading)]">
-                {quickScanResult.summary}
-              </p>
-
-              <p className="text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 text-[#22C55E] font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Screened locally ({inputText.trim().length.toLocaleString()} chars)
-                </span>
-                {summary && summary.hasItems ? (
-                  <span className="inline-flex items-center gap-1 text-[var(--text-accent)] font-semibold">
-                    &bull; <Shield className="w-3.5 h-3.5" /> {summary.totalCount} PII item(s) masked
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-[#22C55E] font-semibold">
-                    &bull; No standard PII detected
-                  </span>
-                )}
-                {screenshot && (
-                  <span className="inline-flex items-center gap-1 text-[var(--text-muted)]">
-                    &bull; <FileImage className="w-3.5 h-3.5" /> {screenshot.name} (preview only)
-                  </span>
-                )}
-              </p>
-
-              {summary && summary.hasItems && (
-                <div className="mt-2 pt-2 border-t border-[var(--border-card)]">
-                  <p className="text-[11px] font-semibold text-[var(--text-heading)] mb-1">
-                    Protected Preview (Client-Side Redaction):
-                  </p>
-                  <p className="p-2.5 rounded-lg bg-[var(--bg-main)] border border-[var(--border-card)] font-mono text-xs text-[var(--text-main)] line-clamp-2">
-                    {maskedPreview}
-                  </p>
-                </div>
-              )}
-
-              <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[11px] text-[var(--text-muted)]">
-                  Need contextual Cloud AI (Gemini 3.5 Flash-Lite) or granular PII toggles?
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage('scanner')}
-                  className="text-xs font-bold text-[var(--text-accent)] hover:underline inline-flex items-center gap-1 cursor-pointer"
-                >
-                  Open Full Hybrid Scanner &rarr;
-                </button>
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  {quickScanResult.summary}
+                </p>
               </div>
             </div>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setCurrentPage('scanner')}
+              icon={<ArrowRight className="w-3.5 h-3.5" />}
+            >
+              Deep Cloud Inspection
+            </Button>
           </div>
         </div>
       )}

@@ -147,16 +147,16 @@ export const PrivacyReviewCard: React.FC<PrivacyReviewCardProps> = ({
     Phone: 'bg-[#22C55E]/15 text-[#15803D] dark:text-[#4ADE80] border-[#22C55E]/35',
     'Financial Information': 'bg-[#EF4444]/15 text-[#DC2626] dark:text-[#FCA5A5] border-[#EF4444]/35',
     'Identification Number': 'bg-[#F59E0B]/15 text-[#B45309] dark:text-[#FBBF24] border-[#F59E0B]/35',
-    'Sensitive URL Parameter': 'bg-[#0D5663]/20 text-[#0D5663] dark:text-[#38BDF8] border-[#0D9488]/35',
+    'Sensitive URL Parameter': 'bg-[#087BFF]/20 text-[#087BFF] dark:text-[#38BDF8] border-[#087BFF]/35',
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* 1. Header Banner & Status Summary */}
-      <Card className="p-5 sm:p-7 border-2 border-[#0D9488]/35 dark:border-[#22D3EE]/40">
+      <Card className="p-5 sm:p-7 border border-[#00D9FF]/40 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border-card)]">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-xl bg-[#0D5663] text-[#22D3EE] shrink-0 mt-0.5">
+            <div className="p-2.5 rounded-2xl bg-[#087BFF]/15 text-[#00D9FF] border border-[#00D9FF]/30 shrink-0 shadow-[0_0_12px_rgba(0,217,255,0.2)] mt-0.5">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>

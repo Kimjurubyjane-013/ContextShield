@@ -113,8 +113,8 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
 
         {/* Security Summary & Signals */}
         <div className="space-y-3">
-          <div className="p-3.5 rounded-xl bg-[#0D5663]/10 border border-[#0D9488]/25 dark:border-[#22D3EE]/25">
-            <p className="text-xs font-bold text-[var(--text-accent)] mb-1">
+          <div className="p-3.5 rounded-2xl bg-[#087BFF]/10 border border-[#00D9FF]/30">
+            <p className="text-xs font-bold text-[#00D9FF] mb-1">
               Analysis Evaluation
             </p>
             <p className="text-xs text-[var(--text-main)] leading-relaxed">
@@ -125,16 +125,16 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
           {/* Detected Signals List */}
           <div>
             <h4 className="text-xs font-bold text-[var(--text-heading)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-[var(--text-accent)]" />
+              <Shield className="w-3.5 h-3.5 text-[#00D9FF]" />
               Detected Risk Factors
             </h4>
             <ul className="space-y-1.5">
               {scan.reasons.map((reason, i) => (
                 <li
                   key={i}
-                  className="flex items-start gap-2 text-xs text-[var(--text-muted)] bg-[var(--bg-main)] p-2.5 rounded-lg border border-[var(--border-card)]"
+                  className="flex items-start gap-2 text-xs text-[var(--text-muted)] bg-[var(--bg-main)] p-2.5 rounded-xl border border-[var(--border-card)]"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#22D3EE] shrink-0 mt-1.5" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00D9FF] shrink-0 mt-1.5" />
                   <span>{reason}</span>
                 </li>
               ))}
@@ -144,7 +144,7 @@ export const ScanDetailModal: React.FC<ScanDetailModalProps> = ({ scan, onClose 
 
         {/* Locally Redacted PII list */}
         {scan.piiItems && scan.piiItems.length > 0 && (
-          <div className="p-3.5 rounded-xl bg-[#0D5663]/10 border border-[var(--border-card)]">
+          <div className="p-3.5 rounded-2xl bg-[#087BFF]/10 border border-[#00D9FF]/20">
             <div className="flex items-center gap-2 mb-2 text-[var(--text-heading)]">
               <EyeOff className="w-4 h-4 text-[var(--text-accent)]" />
               <span className="text-xs font-bold uppercase tracking-wider">

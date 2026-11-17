@@ -256,16 +256,16 @@ export const ScannerPage: React.FC = () => {
         <div className="mt-8 pt-6 border-t border-[var(--border-card)]">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div
-              className={`p-3 rounded-xl border flex items-center gap-3 transition-colors ${
+              className={`p-3 rounded-2xl border flex items-center gap-3 transition-colors ${
                 stage === 'input'
-                  ? 'bg-[#0D5663]/15 border-[#0D9488] dark:border-[#22D3EE] text-[var(--text-heading)] font-bold'
+                  ? 'bg-[#087BFF]/15 border-[#00D9FF] text-[var(--text-heading)] font-bold shadow-[0_0_16px_rgba(0,217,255,0.15)]'
                   : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)]'
               }`}
             >
               <span
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   stage === 'input'
-                    ? 'bg-[#0D5663] text-[#EAF4F8]'
+                    ? 'bg-[#087BFF] text-white shadow-xs'
                     : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-card)]'
                 }`}
               >
@@ -278,16 +278,16 @@ export const ScannerPage: React.FC = () => {
             </div>
 
             <div
-              className={`p-3 rounded-xl border flex items-center gap-3 transition-colors ${
+              className={`p-3 rounded-2xl border flex items-center gap-3 transition-colors ${
                 stage === 'review'
-                  ? 'bg-[#0D5663]/15 border-[#0D9488] dark:border-[#22D3EE] text-[var(--text-heading)] font-bold'
+                  ? 'bg-[#087BFF]/15 border-[#00D9FF] text-[var(--text-heading)] font-bold shadow-[0_0_16px_rgba(0,217,255,0.15)]'
                   : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)]'
               }`}
             >
               <span
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   stage === 'review'
-                    ? 'bg-[#0D5663] text-[#EAF4F8]'
+                    ? 'bg-[#087BFF] text-white shadow-xs'
                     : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-card)]'
                 }`}
               >
@@ -300,16 +300,16 @@ export const ScannerPage: React.FC = () => {
             </div>
 
             <div
-              className={`p-3 rounded-xl border flex items-center gap-3 transition-colors ${
+              className={`p-3 rounded-2xl border flex items-center gap-3 transition-colors ${
                 stage === 'ready'
-                  ? 'bg-[#0D5663]/15 border-[#0D9488] dark:border-[#22D3EE] text-[var(--text-heading)] font-bold'
+                  ? 'bg-[#087BFF]/15 border-[#00D9FF] text-[var(--text-heading)] font-bold shadow-[0_0_16px_rgba(0,217,255,0.15)]'
                   : 'bg-[var(--bg-main)] border-[var(--border-card)] text-[var(--text-muted)]'
               }`}
             >
               <span
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   stage === 'ready'
-                    ? 'bg-[#0D5663] text-[#EAF4F8]'
+                    ? 'bg-[#087BFF] text-white shadow-xs'
                     : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-card)]'
                 }`}
               >

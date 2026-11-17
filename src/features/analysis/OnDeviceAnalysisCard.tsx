@@ -107,7 +107,7 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
         {/* Card Header with Aligned Badge Group */}
         <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-[var(--border-card)]">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="p-2.5 rounded-xl bg-[#0D5663]/15 dark:bg-[#0D5663]/45 text-[#0D5663] dark:text-[#22D3EE] border border-[#22D3EE]/25 shrink-0">
+            <div className="p-2.5 rounded-2xl bg-[#087BFF]/15 text-[#00D9FF] border border-[#00D9FF]/30 shrink-0 shadow-[0_0_12px_rgba(0,217,255,0.2)]">
               <Cpu className="w-5 h-5" />
             </div>
             <div className="min-w-0 space-y-1.5">
@@ -172,17 +172,17 @@ export const OnDeviceAnalysisCard: React.FC<OnDeviceAnalysisCardProps> = ({
 
         {/* Download Progress Bar (when Nano model downloads on supported Chrome builds) */}
         {downloadProgress !== null && (
-          <div className="mt-4 p-4 rounded-xl bg-[#0D5663]/15 border border-[#22D3EE]/30 space-y-2">
+          <div className="mt-4 p-4 rounded-2xl bg-[#087BFF]/15 border border-[#00D9FF]/35 space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-heading)]">
               <span className="flex items-center gap-2">
-                <Download className="w-4 h-4 text-[#22D3EE]" />
+                <Download className="w-4 h-4 text-[#00D9FF]" />
                 Downloading on-device model components...
               </span>
               <span>{downloadProgress}%</span>
             </div>
             <div className="w-full h-2 rounded-full bg-[var(--bg-main)] overflow-hidden">
               <div
-                className="h-full bg-[#22D3EE] transition-all duration-300"
+                className="h-full bg-[#00D9FF] transition-all duration-300"
                 style={{ width: `${downloadProgress}%` }}
               />
             </div>

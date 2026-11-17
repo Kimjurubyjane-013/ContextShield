@@ -3,52 +3,72 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-deep-navy: #071827;
-  --color-dark-teal: #0B2735;
-  --color-security-teal: #0D5663;
-  --color-electric-cyan: #22D3EE;
-  --color-soft-white: #EAF4F8;
+  --color-cyber-dark: #030B1B;
+  --color-cyber-dark-2: #07152B;
+  --color-cyber-sidebar: #061126;
+  --color-cyber-card: #0B1B36;
+  --color-cyber-card-elevated: #102448;
+  --color-primary-blue: #087BFF;
+  --color-electric-cyan: #00D9FF;
+  --color-cyber-teal: #00D6B2;
+  --color-cyber-purple: #7957FF;
   --color-threat-red: #EF4444;
   --color-warning-amber: #F59E0B;
   --color-safe-green: #22C55E;
 }
 
 :root {
-  --bg-main: #F3F7FA;
+  /* Light Theme */
+  --bg-main: #F3F7FC;
+  --bg-secondary: #EBF2F9;
   --bg-card: #FFFFFF;
-  --bg-card-subtle: #EDF3F7;
+  --bg-card-subtle: #EDF4FF;
+  --bg-elevated: #EDF4FF;
   --bg-input: #FFFFFF;
-  --bg-sidebar: #071827;
-  --bg-header: rgba(243, 247, 250, 0.94);
-  --bg-footer: rgba(237, 243, 247, 0.9);
-  --border-card: #D1DFE7;
-  --border-subtle: rgba(209, 223, 231, 0.8);
-  --text-main: #0F2331;
-  --text-heading: #071827;
-  --text-muted: #4C6978;
-  --text-accent: #0D5663;
-  --accent-cyan: #0891B2;
-  --shadow-card: 0 2px 12px rgba(7, 24, 39, 0.06);
+  --bg-sidebar: #FFFFFF;
+  --bg-header: rgba(243, 247, 252, 0.85);
+  --bg-footer: rgba(243, 247, 252, 0.9);
+  --border-card: #DCE6F2;
+  --border-subtle: rgba(220, 230, 242, 0.9);
+  --border-glow: rgba(8, 123, 255, 0.25);
+  --text-main: #12213A;
+  --text-heading: #0B1B36;
+  --text-muted: #536782;
+  --text-accent: #087BFF;
+  --accent-cyan: #00A8D6;
+  --accent-blue: #087BFF;
+  --accent-teal: #00B395;
+  --accent-purple: #7957FF;
+  --shadow-card: 0 4px 20px rgba(18, 33, 58, 0.06);
+  --shadow-glow: 0 0 24px rgba(8, 123, 255, 0.12);
   color-scheme: light;
 }
 
 html.dark,
 [data-theme="dark"] {
-  --bg-main: #071827;
-  --bg-card: #0B2735;
-  --bg-card-subtle: #0F3244;
-  --bg-input: #071827;
-  --bg-sidebar: #05121E;
-  --bg-header: rgba(7, 24, 39, 0.92);
-  --bg-footer: rgba(5, 18, 30, 0.92);
-  --border-card: #134857;
-  --border-subtle: rgba(13, 86, 99, 0.55);
-  --text-main: #EAF4F8;
-  --text-heading: #F8FCFE;
-  --text-muted: #8EB2C2;
-  --text-accent: #22D3EE;
-  --accent-cyan: #22D3EE;
-  --shadow-card: 0 6px 24px rgba(2, 10, 18, 0.42);
+  /* Dark Theme: 3D Futuristic Cyber Defense Center */
+  --bg-main: #030B1B;
+  --bg-secondary: #07152B;
+  --bg-card: #0B1B36;
+  --bg-card-subtle: #0E2244;
+  --bg-elevated: #102448;
+  --bg-input: #07152B;
+  --bg-sidebar: #061126;
+  --bg-header: rgba(3, 11, 27, 0.85);
+  --bg-footer: rgba(6, 17, 38, 0.9);
+  --border-card: rgba(30, 64, 115, 0.65);
+  --border-subtle: rgba(8, 123, 255, 0.22);
+  --border-glow: rgba(0, 217, 255, 0.35);
+  --text-main: #F4F8FF;
+  --text-heading: #FFFFFF;
+  --text-muted: #7185A6;
+  --text-accent: #00D9FF;
+  --accent-cyan: #00D9FF;
+  --accent-blue: #087BFF;
+  --accent-teal: #00D6B2;
+  --accent-purple: #7957FF;
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 32px rgba(0, 217, 255, 0.18);
   color-scheme: dark;
 }
 
@@ -57,5 +77,80 @@ body {
   color: var(--text-main);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  overflow-x: hidden;
+}
+
+/* Cyber Glow & Hologram Utilities */
+.cyber-glow-cyan {
+  box-shadow: 0 0 24px rgba(0, 217, 255, 0.25);
+}
+
+.cyber-glow-blue {
+  box-shadow: 0 0 24px rgba(8, 123, 255, 0.25);
+}
+
+.cyber-border-glow {
+  border-color: rgba(0, 217, 255, 0.45);
+  box-shadow: 0 0 16px rgba(0, 217, 255, 0.2);
+}
+
+.cyber-gradient-text {
+  background: linear-gradient(135deg, #00D9FF 0%, #00D6B2 50%, #087BFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cyber-btn-gradient {
+  background: linear-gradient(135deg, #087BFF 0%, #7957FF 100%);
+  color: #FFFFFF;
+}
+
+.cyber-btn-gradient:hover {
+  background: linear-gradient(135deg, #1C8AFF 0%, #8C6DFF 100%);
+  box-shadow: 0 0 20px rgba(121, 87, 255, 0.4);
+}
+
+/* Glassmorphism Surface */
+.cyber-glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-card);
+}
+
+/* Floating Animation for 3D Elements */
+@keyframes cyber-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+@keyframes cyber-pulse-slow {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+.animate-cyber-float {
+  animation: cyber-float 6s ease-in-out infinite;
+}
+
+.animate-cyber-pulse {
+  animation: cyber-pulse-slow 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cyber-float,
+  .animate-cyber-pulse {
+    animation: none;
+  }
 }

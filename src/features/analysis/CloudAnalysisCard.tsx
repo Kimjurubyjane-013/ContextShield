@@ -183,7 +183,7 @@ export const CloudAnalysisCard: React.FC<CloudAnalysisCardProps> = ({
         {/* Card Header with Aligned Badges */}
         <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-[var(--border-card)]">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="p-2.5 rounded-xl bg-[#0D5663]/15 dark:bg-[#22D3EE]/12 text-[#0D5663] dark:text-[#22D3EE] border border-[#22D3EE]/25 shrink-0">
+            <div className="p-2.5 rounded-2xl bg-[#087BFF]/15 text-[#00D9FF] border border-[#00D9FF]/30 shrink-0 shadow-[0_0_12px_rgba(0,217,255,0.2)]">
               <Cloud className="w-5 h-5" />
             </div>
             <div className="min-w-0 space-y-1.5">
@@ -249,19 +249,19 @@ export const CloudAnalysisCard: React.FC<CloudAnalysisCardProps> = ({
 
         {/* Active Request Progress Indicator */}
         {isAnalyzing && (
-          <div className="mt-4 p-4 rounded-xl bg-[#0D5663]/12 dark:bg-[#0D5663]/35 border border-[#22D3EE]/35 space-y-2.5 text-xs">
+          <div className="mt-4 p-4 rounded-2xl bg-[#087BFF]/10 border border-[#00D9FF]/35 space-y-2.5 text-xs">
             <div className="flex items-center justify-between gap-2 font-semibold text-[var(--text-heading)]">
               <span className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#22D3EE] animate-spin" />
+                <Sparkles className="w-4 h-4 text-[#00D9FF] animate-spin" />
                 Communicating with Gemini 3.5 Flash-Lite...
               </span>
-              <span className="font-mono text-[#22D3EE]">
+              <span className="font-mono text-[#00D9FF]">
                 {elapsedSeconds}s / {TIMEOUT_SECONDS}s
               </span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-[var(--bg-main)] overflow-hidden">
               <div
-                className="h-full bg-[#22D3EE] transition-all duration-700"
+                className="h-full bg-[#00D9FF] transition-all duration-700"
                 style={{ width: `${progressPct}%` }}
               />
             </div>

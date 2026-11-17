@@ -3,7 +3,7 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
-  History as HistoryIcon,
+  FileText,
   Search,
   ShieldAlert,
   Trash2,
@@ -49,19 +49,19 @@ export const HistoryPage: React.FC = () => {
   }, [scans])
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8 pb-10">
       {/* Page Header */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-card)] shadow-[var(--shadow-card)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-colors duration-250">
         <div className="space-y-2 max-w-2xl">
           <StatusBadge
             variant="info"
             size="md"
-            icon={<HistoryIcon className="w-3.5 h-3.5" />}
+            icon={<FileText className="w-3.5 h-3.5" />}
           >
             Audit Trail
           </StatusBadge>
           <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-heading)] tracking-tight">
-            Scan History &amp; Security Audit
+            Security Reports &amp; History
           </h1>
           <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
             Review all analyzed communications, inspect detected threat indicators, and manage your audit log.
@@ -84,12 +84,12 @@ export const HistoryPage: React.FC = () => {
       {/* Filter and Search Bar Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Status Filter Tabs */}
-        <div className="flex items-center p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] overflow-x-auto">
+        <div className="flex items-center p-1.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-card)] overflow-x-auto shadow-xs">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'all'
-                ? 'bg-[#0D5663] text-[#EAF4F8] shadow-xs border border-[#22D3EE]/35'
+                ? 'bg-[#087BFF] text-white shadow-xs border border-[#00D9FF]/40'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
@@ -97,19 +97,19 @@ export const HistoryPage: React.FC = () => {
           </button>
           <button
             onClick={() => setStatusFilter('safe')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'safe'
-                ? 'bg-[#22C55E] text-[#05121E] font-bold shadow-xs'
-                : 'text-[var(--text-muted)] hover:text-[#22C55E]'
+                ? 'bg-[#00D6B2] text-[#030B1B] font-bold shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[#00D6B2]'
             }`}
           >
             Safe ({counts.safe})
           </button>
           <button
             onClick={() => setStatusFilter('suspicious')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'suspicious'
-                ? 'bg-[#F59E0B] text-[#05121E] font-bold shadow-xs'
+                ? 'bg-[#F59E0B] text-[#030B1B] font-bold shadow-xs'
                 : 'text-[var(--text-muted)] hover:text-[#F59E0B]'
             }`}
           >
@@ -117,7 +117,7 @@ export const HistoryPage: React.FC = () => {
           </button>
           <button
             onClick={() => setStatusFilter('threat')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               statusFilter === 'threat'
                 ? 'bg-[#EF4444] text-white font-bold shadow-xs'
                 : 'text-[var(--text-muted)] hover:text-[#EF4444]'
@@ -129,13 +129,13 @@ export const HistoryPage: React.FC = () => {
 
         {/* Local Search Filter */}
         <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Filter scans by sender, content, or risk..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-[var(--bg-card)] border border-[var(--border-card)] text-[var(--text-main)] placeholder-[var(--text-muted)]/70 focus:outline-none focus:ring-2 focus:ring-[#22D3EE]/40"
+            className="w-full pl-9 pr-3 py-2 rounded-2xl text-xs bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-main)] placeholder-[var(--text-muted)]/70 focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/40"
           />
         </div>
       </div>
@@ -171,9 +171,9 @@ export const HistoryPage: React.FC = () => {
             >
               <div className="flex items-start gap-3.5 flex-1 min-w-0">
                 <div
-                  className={`p-2.5 rounded-xl shrink-0 mt-0.5 sm:mt-0 ${
+                  className={`p-2.5 rounded-2xl shrink-0 mt-0.5 sm:mt-0 ${
                     item.status === 'safe'
-                      ? 'bg-[#22C55E]/15 text-[#22C55E]'
+                      ? 'bg-[#00D6B2]/15 text-[#00D6B2]'
                       : item.status === 'suspicious'
                       ? 'bg-[#F59E0B]/15 text-[#F59E0B]'
                       : 'bg-[#EF4444]/15 text-[#EF4444]'
@@ -200,31 +200,41 @@ export const HistoryPage: React.FC = () => {
                     <span className="text-xs font-bold text-[var(--text-heading)] truncate max-w-[200px]">
                       {item.sender}
                     </span>
-                    <span className="text-[11px] text-[var(--text-muted)]">
-                      &bull; {item.timestamp}
+                    <span className="text-[11px] text-[var(--text-muted)] font-mono">
+                      {item.timestamp}
                     </span>
-                    {item.isDemo && (
-                      <StatusBadge variant="neutral" size="sm" className="font-mono">
-                        DEMO
-                      </StatusBadge>
+                  </div>
+
+                  <p className="text-xs text-[var(--text-muted)] line-clamp-2 leading-relaxed">
+                    {item.summary}
+                  </p>
+
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-card)]">
+                      {item.category}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-card)]">
+                      {item.analysisMethod}
+                    </span>
+                    {item.redactedPiiCount > 0 && (
+                      <span className="text-[10px] font-semibold text-[#00D9FF]">
+                        {item.redactedPiiCount} PII Redacted
+                      </span>
                     )}
                   </div>
-                  <p className="text-xs text-[var(--text-muted)] line-clamp-2 font-mono">
-                    {item.messageText}
-                  </p>
                 </div>
               </div>
 
-              {/* Threat Score and Arrow */}
-              <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 sm:border-l sm:border-[var(--border-card)] sm:pl-4">
+              {/* Threat Score & Arrow */}
+              <div className="flex items-center justify-between sm:justify-end gap-5 shrink-0 border-t sm:border-t-0 sm:border-l border-[var(--border-card)] pt-3 sm:pt-0 sm:pl-5">
                 <div className="text-left sm:text-right">
-                  <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
-                    Score
+                  <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
+                    Threat Score
                   </span>
                   <span
-                    className={`text-sm font-black ${
+                    className={`text-xl font-black ${
                       item.status === 'safe'
-                        ? 'text-[#22C55E]'
+                        ? 'text-[#00D6B2]'
                         : item.status === 'suspicious'
                         ? 'text-[#F59E0B]'
                         : 'text-[#EF4444]'
@@ -233,7 +243,9 @@ export const HistoryPage: React.FC = () => {
                     {item.threatScore}/100
                   </span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[var(--text-muted)]" />
+                <div className="w-8 h-8 rounded-full bg-[var(--bg-card-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[#00D9FF] transition-colors">
+                  <ArrowRight className="w-4 h-4" />
+                </div>
               </div>
             </Card>
           ))}
@@ -244,15 +256,18 @@ export const HistoryPage: React.FC = () => {
       <Modal
         isOpen={clearModalOpen}
         onClose={() => setClearModalOpen(false)}
-        title="Clear Scan History"
-        maxWidth="sm"
+        title="Clear Security Scan History"
       >
         <div className="space-y-4">
-          <p className="text-xs sm:text-sm text-[var(--text-main)]">
-            Are you sure you want to clear your local scan history?
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+            Are you sure you want to delete all recorded scan history? This action cannot be undone. All local threat logs will be purged from browser memory.
           </p>
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setClearModalOpen(false)}>
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-card)]">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setClearModalOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -262,8 +277,9 @@ export const HistoryPage: React.FC = () => {
                 clearHistory()
                 setClearModalOpen(false)
               }}
+              icon={<Trash2 className="w-4 h-4" />}
             >
-              Confirm Clear
+              Clear All Data
             </Button>
           </div>
         </div>

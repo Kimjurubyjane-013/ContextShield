@@ -5,16 +5,22 @@ export const EmptyIllustration: React.FC<{ className?: string }> = ({
 }) => {
   return (
     <div className={`relative flex items-center justify-center select-none ${className}`}>
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-        <circle cx="60" cy="60" r="48" fill="#A6C5C1" fillOpacity="0.15" />
-        <circle cx="60" cy="60" r="34" fill="#F8F5EE" fillOpacity="0.8" />
+      <div
+        className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#087BFF]/15 to-[#00D9FF]/20 blur-xl pointer-events-none"
+        aria-hidden="true"
+      />
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full relative z-10">
+        <circle cx="60" cy="60" r="48" stroke="#087BFF" strokeWidth="1" strokeDasharray="3 4" opacity="0.4" />
+        <circle cx="60" cy="60" r="36" fill="var(--bg-card)" stroke="#00D9FF" strokeWidth="1.5" strokeOpacity="0.5" />
         <path
-          d="M 60 38 C 69 38 74 42 74 50 C 74 62 65 68 60 71 C 55 68 46 62 46 50 C 46 42 51 38 60 38 Z"
-          fill="#164E5A"
-          opacity="0.25"
+          d="M 60 40 C 70 40 76 44 76 54 C 76 66 66 73 60 76 C 54 73 44 66 44 54 C 44 44 50 40 60 40 Z"
+          fill="#087BFF"
+          fillOpacity="0.15"
+          stroke="#00D9FF"
+          strokeWidth="1.5"
         />
-        <circle cx="60" cy="54" r="4" fill="#164E5A" opacity="0.4" />
-        <path d="M 52 82 Q 60 86 68 82" stroke="#159FB5" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="60" cy="56" r="3.5" fill="#00D9FF" />
+        <path d="M 50 86 Q 60 90 70 86" stroke="#00D6B2" strokeWidth="2" strokeLinecap="round" />
       </svg>
     </div>
   )

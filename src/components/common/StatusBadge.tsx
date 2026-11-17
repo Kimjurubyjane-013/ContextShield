@@ -23,49 +23,44 @@ export interface StatusBadgeProps {
 const VARIANT_STYLES: Record<StatusBadgeVariant, { container: string; dot: string }> = {
   safe: {
     container:
-      'bg-[#22C55E]/12 text-[#15803D] border-[#22C55E]/35 dark:bg-[#22C55E]/15 dark:text-[#4ADE80] dark:border-[#22C55E]/35',
-    dot: 'bg-[#22C55E]',
+      'bg-[#00D6B2]/12 text-[#00A88B] border-[#00D6B2]/30 dark:bg-[#00D6B2]/15 dark:text-[#00D6B2] dark:border-[#00D6B2]/40',
+    dot: 'bg-[#00D6B2] shadow-[0_0_8px_#00D6B2]',
   },
   suspicious: {
     container:
-      'bg-[#F59E0B]/12 text-[#B45309] border-[#F59E0B]/35 dark:bg-[#F59E0B]/15 dark:text-[#FBBF24] dark:border-[#F59E0B]/35',
-    dot: 'bg-[#F59E0B]',
+      'bg-[#F59E0B]/12 text-[#D97706] border-[#F59E0B]/30 dark:bg-[#F59E0B]/15 dark:text-[#FBBF24] dark:border-[#F59E0B]/40',
+    dot: 'bg-[#F59E0B] shadow-[0_0_8px_#F59E0B]',
   },
   warning: {
     container:
-      'bg-[#F59E0B]/12 text-[#B45309] border-[#F59E0B]/35 dark:bg-[#F59E0B]/15 dark:text-[#FBBF24] dark:border-[#F59E0B]/35',
-    dot: 'bg-[#F59E0B]',
+      'bg-[#F59E0B]/12 text-[#D97706] border-[#F59E0B]/30 dark:bg-[#F59E0B]/15 dark:text-[#FBBF24] dark:border-[#F59E0B]/40',
+    dot: 'bg-[#F59E0B] shadow-[0_0_8px_#F59E0B]',
   },
   threat: {
     container:
-      'bg-[#EF4444]/12 text-[#B91C1C] border-[#EF4444]/35 dark:bg-[#EF4444]/15 dark:text-[#F87171] dark:border-[#EF4444]/35',
-    dot: 'bg-[#EF4444]',
+      'bg-[#EF4444]/12 text-[#DC2626] border-[#EF4444]/30 dark:bg-[#EF4444]/15 dark:text-[#F87171] dark:border-[#EF4444]/40',
+    dot: 'bg-[#EF4444] shadow-[0_0_8px_#EF4444]',
   },
   ai: {
     container:
-      'bg-[#0D5663]/10 text-[#0E7490] border-[#0D5663]/30 dark:bg-[#22D3EE]/12 dark:text-[#22D3EE] dark:border-[#22D3EE]/35',
-    dot: 'bg-[#22D3EE]',
+      'bg-[#087BFF]/12 text-[#087BFF] border-[#087BFF]/30 dark:bg-[#00D9FF]/15 dark:text-[#00D9FF] dark:border-[#00D9FF]/40',
+    dot: 'bg-[#00D9FF] shadow-[0_0_8px_#00D9FF]',
   },
   local: {
     container:
-      'bg-[#0D5663]/12 text-[#0D5663] border-[#0D5663]/30 dark:bg-[#0D5663]/45 dark:text-[#67E8F9] dark:border-[#22D3EE]/25',
-    dot: 'bg-[#0D5663] dark:bg-[#22D3EE]',
+      'bg-[#087BFF]/10 text-[#087BFF] border-[#087BFF]/25 dark:bg-[#087BFF]/20 dark:text-[#38BDF8] dark:border-[#087BFF]/40',
+    dot: 'bg-[#087BFF] dark:bg-[#38BDF8] shadow-[0_0_8px_#087BFF]',
   },
   info: {
     container:
-      'bg-[#0EA5E9]/10 text-[#0369A1] border-[#0EA5E9]/30 dark:bg-[#22D3EE]/10 dark:text-[#7DD3FC] dark:border-[#22D3EE]/30',
-    dot: 'bg-[#22D3EE]',
+      'bg-[#00D9FF]/10 text-[#0891B2] border-[#00D9FF]/30 dark:bg-[#00D9FF]/15 dark:text-[#00D9FF] dark:border-[#00D9FF]/40',
+    dot: 'bg-[#00D9FF] shadow-[0_0_8px_#00D9FF]',
   },
   neutral: {
     container:
-      'bg-[#64748B]/10 text-[#334155] border-[#64748B]/25 dark:bg-[#0F3142] dark:text-[#94B8C7] dark:border-[#164E63]',
-    dot: 'bg-[#64748B] dark:bg-[#94B8C7]',
+      'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border-[var(--border-card)]',
+    dot: 'bg-[var(--text-muted)]',
   },
-}
-
-const SIZE_STYLES: Record<'sm' | 'md', string> = {
-  sm: 'min-h-[24px] px-2.5 py-0.5 text-[11px]',
-  md: 'min-h-[26px] px-2.5 py-1 text-[11px]',
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({
@@ -79,22 +74,27 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
   const styles = VARIANT_STYLES[variant]
 
+  const sizeClasses = {
+    sm: 'text-[11px] px-2.5 py-0.5 rounded-full gap-1.5',
+    md: 'text-xs px-3 py-1 rounded-full gap-2',
+  }
+
   return (
     <span
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold leading-none border shrink-0 whitespace-nowrap select-none ${SIZE_STYLES[size]} ${styles.container} ${className}`}
+      className={`inline-flex items-center font-semibold leading-none border transition-colors select-none ${styles.container} ${sizeClasses[size]} ${className}`}
     >
       {dot && (
-        <span
-          className={`w-1.5 h-1.5 rounded-full shrink-0 ${styles.dot} ${pulse ? 'animate-pulse' : ''}`}
-          aria-hidden="true"
-        />
-      )}
-      {icon && (
-        <span className="inline-flex items-center justify-center shrink-0" aria-hidden="true">
-          {icon}
+        <span className="relative flex h-2 w-2 shrink-0">
+          {pulse && (
+            <span
+              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${styles.dot}`}
+            />
+          )}
+          <span className={`relative inline-flex rounded-full h-2 w-2 ${styles.dot}`} />
         </span>
       )}
-      <span className="leading-none">{children}</span>
+      {icon && <span className="shrink-0">{icon}</span>}
+      <span className="truncate">{children}</span>
     </span>
   )
 }

@@ -34,11 +34,11 @@ export const HybridComparisonCard: React.FC<HybridComparisonCardProps> = ({
   const isCloudOnly = Boolean(!effectiveOnDevice && effectiveCloud)
 
   return (
-    <Card className="p-5 sm:p-6 border border-[#22D3EE]/35 bg-[var(--bg-card)]">
+    <Card className="p-5 sm:p-6 border border-[#00D9FF]/35 bg-[var(--bg-card)]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border-card)]">
         <div className="flex items-start gap-3">
-          <div className="p-2.5 rounded-xl bg-[#0D5663]/15 dark:bg-[#0D5663]/45 text-[#0D5663] dark:text-[#22D3EE] border border-[#22D3EE]/25 shrink-0">
+          <div className="p-2.5 rounded-2xl bg-[#087BFF]/15 text-[#00D9FF] border border-[#00D9FF]/30 shrink-0 shadow-[0_0_12px_rgba(0,217,255,0.2)]">
             <Layers className="w-6 h-6" />
           </div>
           <div className="space-y-1">
